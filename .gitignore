@@ -2,3 +2,5 @@
 .deps
 .git
 .objs
+/data/
+/nbproject/
