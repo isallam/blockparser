@@ -3,4 +3,5 @@
 .git
 .objs
 /data/
+/logs/
 /nbproject/

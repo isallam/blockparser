@@ -8,12 +8,18 @@
 #include <errlog.h>
 #include <option.h>
 #include <callback.h>
+
 #include <ooObjy.h>
 #include <objy/db/Connection.h>
 #include <objy/db/Transaction.h>
 #include <objy/db/TransactionScope.h>
+#include <objy/data/Data.h>
+#include <objy/data/List.h>
 
 using namespace objy::db;
+namespace objydata = objy::data;
+namespace objyschema = objy::schema_provider;
+
 
 static uint8_t empty[kSHA256ByteSize] = { 0x42 };
 
@@ -24,11 +30,28 @@ typedef GoogMap<
     Hash256Equal
 >::Map OutputMap;
 
+bool createSchema();
+bool createBlock(int blkID, int version, uint8_t* bufPrevBlockHash, 
+        uint8_t* bufBlockMerkleRoot, long blkTime, uint8_t* bufBlockHash);
+bool createTransaction(int txID, uint8_t* buf);
+bool createInput(int inputID, uint8_t* bufUpTxHash, bool isCoinBase);
+bool createOutput(int outputID, uint8_t* address, uint64_t value);
+
+
+
+// class names
+const char* BlockClassName        = "Block";
+const char* TransactionClassName  = "Transaction";
+const char* InputClassName        = "Input";
+const char* OutputClassName       = "Output";
+const char* AddressClassName      = "Address";
+
+
 struct ObjyDump : public Callback {
 
     FILE *objySimFile;
     FILE *objyEdgeSimFile;
-
+    
     // objy stuff
     std::string fdname;
     objy::db::Connection* connection;
@@ -42,6 +65,9 @@ struct ObjyDump : public Callback {
     int64_t cutoffBlock;
     OutputMap outputMap;
     optparse::OptionParser parser;
+    
+    bool dumpToFiles;
+    bool enoughProcessing;
 
     ObjyDump() {
         parser
@@ -80,14 +106,32 @@ struct ObjyDump : public Callback {
         
         // TBD... boot file is hard coded for now, will be params later
         fdname = "../data/bitcoin.boot";
+        ooObjy::setLoggingOptions(oocLogAll, true, false, "../logs");
         ooObjy::startup();
         
         //connection = ooObjy::getConnection(bootfile);
 		connection = Connection::connect(fdname.c_str());
    
-		trx = new Transaction(OpenMode::Update);
-		trx->commit();
-		trx->release();
+        try {
+          trx = new Transaction(OpenMode::Update);
+          // create schema 
+          bool bRet = createSchema();
+          trx->commit();
+          trx->release();
+        } 
+        catch (ooKernelException& e)
+        {
+          errFatal(e.what());
+          return 1;
+        }
+        catch (ooBaseException& e)
+        {
+          errFatal(e.what());
+          return 1;
+        }
+
+        dumpToFiles = true;
+        enoughProcessing = false;
 
         static uint64_t sz = 32 * 1000 * 1000;
         outputMap.setEmptyKey(empty);
@@ -114,7 +158,7 @@ struct ObjyDump : public Callback {
             wrapup();
         }
 
-        auto p = b->chunk->getData();
+        const uint8_t * p = b->chunk->getData();
         uint8_t blockHash[kSHA256ByteSize];
         sha256Twice(blockHash, p, 80);
 
@@ -134,13 +178,14 @@ struct ObjyDump : public Callback {
         // id BIGINT PRIMARY KEY
         // hash BINARY(32)
         // time BIGINT
-        fprintf(objySimFile, 
+        if (dumpToFiles)
+          fprintf(objySimFile, 
                 "Block(ID:%" PRIu64 ", "
                 "VERSION:%" PRIu64 ","
                 "PrevBlockHash:%s,"
                 "BlockMerkleRoot:%s,"
                 "TIME:%" PRIu64 ","
-                "BlockHash:%s)", 
+                "BlockHash:%s)\n", 
                 (blkID = b->height-1),
                 (uint64_t)version,
                 bufPrevBlockHash, 
@@ -148,8 +193,8 @@ struct ObjyDump : public Callback {
                 (uint64_t)blkTime,
                 bufBlockHash);
 
-        fputc('\n', objySimFile);
-
+        createBlock(blkID, version, bufPrevBlockHash, bufBlockMerkleRoot, blkTime, bufBlockHash);
+        
         if(0==(b->height)%500) {
             fprintf(
                 stderr,
@@ -158,9 +203,14 @@ struct ObjyDump : public Callback {
                 b->height,
                 outputMap.size()
             );
+            enoughProcessing = true;
         }
     }
 
+    virtual bool done() {
+      return enoughProcessing;
+    }
+    
     virtual void startTX(
         const uint8_t *p,
         const uint8_t *hash
@@ -172,16 +222,29 @@ struct ObjyDump : public Callback {
         uint8_t* buf = (uint8_t*)alloca(2*size + 1);
         toHex(buf, hash);
 
-      fprintf(objySimFile, 
+        if (dumpToFiles)
+          fprintf(objySimFile, 
               "  Trx(TXID:%" PRIu64 ", "
                 "BLKID:%" PRIu64 ", "
                 "HASH:%s)\n",
                 ++txID,
                 blkID,
                 buf);
+        
+        createTransaction(txID, buf);
 
     }
 
+    virtual void endTX(
+        const uint8_t *p
+    ) {
+        LOAD(uint32_t, lockTime, p);
+        if (dumpToFiles)
+          fprintf(objySimFile, 
+                "  EndTX(    lockTime = %" PRIu32 "\n", 
+                (uint32_t)lockTime);
+    }
+        
     virtual void startInputs(
         const uint8_t *p
     ) {
@@ -207,7 +270,7 @@ struct ObjyDump : public Callback {
 
         isCoinBase = (0==memcmp(gNullHash.v, upTXHash.v, sizeof(gNullHash)));
         // later.
-//        if(isCoinBase) {
+        if(isCoinBase) {
 //            uint64_t value = getBaseReward(currBlock);
 //            printf("%sisCoinBase = true\n", spaces);
 //            printf(
@@ -225,13 +288,14 @@ struct ObjyDump : public Callback {
 //                );
 //            pop();
 //            printf("%s'\n", spaces);
-//        }
+        }
        
         size_t size = kSHA256ByteSize;
         uint8_t* bufUpTxHash = (uint8_t*)alloca(2*size + 1);
         toHex(bufUpTxHash, upTXHash.v);
         
-        fprintf(objySimFile, 
+        if (dumpToFiles)
+          fprintf(objySimFile, 
               "    Input(InputID:%" PRIu64 ", "
                 "UpTxHash:%s, "
                 "UpOutputIndex:%" PRIu64 ", "
@@ -240,6 +304,8 @@ struct ObjyDump : public Callback {
                 bufUpTxHash,
                 (uint64_t)upOutputIndex,
                 isCoinBase);
+        
+        createInput(inputID, bufUpTxHash, isCoinBase);
 
     }
     // Called when at the end of a TX input
@@ -283,7 +349,8 @@ struct ObjyDump : public Callback {
         // value BIGINT
         // txID BIGINT
         // offset INT
-        fprintf(
+        if (dumpToFiles)
+          fprintf(
             objySimFile,
             "    Output(ID:%" PRIu64 ", "
             "Address:%s, "
@@ -297,6 +364,8 @@ struct ObjyDump : public Callback {
             txID,
             (uint32_t)outputIndex
         );
+        
+        createOutput(outputID, address, value);
 
         uint32_t oi = outputIndex;
         uint8_t *h = allocHash256();
@@ -328,7 +397,7 @@ struct ObjyDump : public Callback {
         uint32_t *h32 = reinterpret_cast<uint32_t*>(ih);
         h32[0] ^= oi;
 
-        auto src = outputMap.find(h.v);
+        OutputMap::iterator src = outputMap.find(h.v);
         if(outputMap.end()==src) {
             errFatal("unconnected input");
         }
@@ -346,7 +415,8 @@ struct ObjyDump : public Callback {
         // outputID BIGINT
         // txID BIGINT
         // offset INT
-        fprintf(
+        if (dumpToFiles)
+          fprintf(
             objyEdgeSimFile,
             "Edge(InputId:%" PRIu64 ", "
             "OutputId:%" PRIu64 ", "
@@ -379,3 +449,152 @@ struct ObjyDump : public Callback {
 
 static ObjyDump objyDump;
 
+
+// createSchema 
+// TBD: It's here for now but perhaps we need to move it to another location,
+//      once we refactor the concept of ingesting such data into Objy/Thingspan
+bool createSchema()
+{
+  // Block Class
+   objydata::DataSpecificationHandle refSpec = 
+           objydata::DataSpecificationBuilder<objydata::LogicalType::Reference>()
+          .setReferencedClass(BlockClassName)
+          .build();
+
+ // transaction arrays 
+  objydata::DataSpecificationHandle transactionsElemSpec = 
+          objydata::DataSpecificationBuilder<objydata::LogicalType::Reference>()
+          //.setIdentifierSpecification(objydata::SpecificationFor<objy::uint_64>::get())
+          .setReferencedClass(TransactionClassName)
+          .build();
+                  
+  objydata::DataSpecificationHandle transactionsSpec = 
+          objydata::DataSpecificationBuilder<objydata::LogicalType::List>()
+          .setElementSpecification(transactionsElemSpec)
+          //.setCollectionName("SegmentedArray")
+          .build();
+
+  objydata::Class blockClass = objydata::ClassBuilder(BlockClassName)
+                 .setSuperclass("ooObj")
+                 .addAttribute<objy::uint_64>("id")
+                 .addAttribute<objy::int_32>("version")
+                 .addAttribute<objydata::DateTime>("time")
+                 .addAttribute<objydata::Utf8String>("hash")
+                 .addAttribute<objydata::Utf8String>("prevBlockHash")
+                 .addAttribute<objydata::Utf8String>("merkleRootHash")
+                 .addAttribute("prevBlock", refSpec)
+                 .addAttribute("transactions", transactionsSpec)
+                 .build();
+
+  // Transaction Class
+  
+  objydata::DataSpecificationHandle inputsElemSpec = 
+          objydata::DataSpecificationBuilder<objydata::LogicalType::Reference>()
+          .setReferencedClass(InputClassName)
+          .build();
+                  
+  objydata::DataSpecificationHandle inputsSpec = 
+          objydata::DataSpecificationBuilder<objydata::LogicalType::List>()
+          .setElementSpecification(inputsElemSpec)
+          //.setCollectionName("SegmentedArray")
+          .build();
+  
+  objydata::DataSpecificationHandle outputsElemSpec = 
+          objydata::DataSpecificationBuilder<objydata::LogicalType::Reference>()
+          .setReferencedClass(OutputClassName)
+          .build();
+                  
+  objydata::DataSpecificationHandle outputsSpec = 
+          objydata::DataSpecificationBuilder<objydata::LogicalType::List>()
+          .setElementSpecification(outputsElemSpec)
+          //.setCollectionName("SegmentedArray")
+          .build();
+  
+  objydata::Class transactionClass = 
+                 objydata::ClassBuilder(TransactionClassName)
+                 .setSuperclass("ooObj")
+                 .addAttribute<objy::uint_64>("id")
+                 //.addAttribute(objydata::LogicalType.DateTime, "time")
+                 .addAttribute<objydata::Utf8String>("hash")
+                 .addAttribute("inputs", inputsSpec)
+                 .addAttribute("outputs", outputsSpec)
+                 .build();
+
+  // Input Class
+  objydata::DataSpecificationHandle transactionRefSpec = 
+           objydata::DataSpecificationBuilder<objydata::LogicalType::Reference>()
+          .setReferencedClass(TransactionClassName)
+          .build();
+  
+  objydata::Class inputClass = 
+                 objydata::ClassBuilder(InputClassName)
+                 .setSuperclass("ooObj")
+                 .addAttribute<objy::uint_64>("id")
+                 .addAttribute<objydata::Utf8String>("upTxHash")
+                 .addAttribute("upTx", transactionRefSpec)
+                 .addAttribute<bool>("isCoinBase")
+                 .build();
+
+  // Address Class
+  objydata::Class addressClass = 
+                 objydata::ClassBuilder(AddressClassName)
+                 .setSuperclass("ooObj")
+                 .addAttribute<objydata::Utf8String>("hash")
+                 .build();
+  
+  // output Class
+  objydata::DataSpecificationHandle addressRefSpec = 
+           objydata::DataSpecificationBuilder<objydata::LogicalType::Reference>()
+          .setReferencedClass(AddressClassName)
+          .build();
+
+  objydata::Class outputClass = 
+                 objydata::ClassBuilder(OutputClassName)
+                 .setSuperclass("ooObj")
+                 .addAttribute<objy::uint_64>("id")
+                 .addAttribute<objydata::Utf8String>("addressHash")
+                 .addAttribute("address", addressRefSpec)
+                 .addAttribute<objy::uint_32>("value")
+                 .build();
+  
+  
+  objyschema::SchemaProvider* provider = objyschema::SchemaProvider::defaultPersistentProvider();
+  provider->represent(blockClass);
+  provider->represent(transactionClass);
+  provider->represent(inputClass);
+  provider->represent(outputClass);
+  provider->represent(addressClass);
+  
+  return true;
+  
+}
+
+bool createBlock(int blkID, int version, uint8_t* bufPrevBlockHash, 
+        uint8_t* bufBlockMerkleRoot, long blkTime, uint8_t* bufBlockHash)
+{
+  objydata::Class objectClass = objydata::lookupClass(BlockClassName);
+  
+  return true;
+}
+
+bool createTransaction(int txID, uint8_t* hash)
+{
+  objydata::Class objectClass = objydata::lookupClass(TransactionClassName);
+  
+  return true;
+}
+
+bool createInput(int inputID, uint8_t* bufUpTxHash, bool isCoinBase)
+{
+  objydata::Class objectClass = objydata::lookupClass(InputClassName);
+  
+  return true;
+  
+}
+
+bool createOutput(int outputID, uint8_t* address, uint64_t value)
+{
+  objydata::Class objectClass = objydata::lookupClass(OutputClassName);
+  
+  return true;
+}
