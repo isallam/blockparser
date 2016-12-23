@@ -31,11 +31,11 @@ typedef GoogMap<
 >::Map OutputMap;
 
 bool createSchema();
-bool createBlock(int blkID, int version, uint8_t* bufPrevBlockHash, 
-        uint8_t* bufBlockMerkleRoot, long blkTime, uint8_t* bufBlockHash);
-bool createTransaction(int txID, uint8_t* buf);
-bool createInput(int inputID, uint8_t* bufUpTxHash, bool isCoinBase);
-bool createOutput(int outputID, uint8_t* address, uint64_t value);
+bool createBlock(int id, int version, uint8_t* prevBlockHash, 
+        uint8_t* blockMerkleRoot, long blkTime, uint8_t* hash);
+bool createTransaction(int id, uint8_t* hash);
+bool createInput(int id, uint8_t* upTxHash, bool isCoinBase);
+bool createOutput(int id, uint8_t* address, uint64_t trxValue);
 
 
 
@@ -117,7 +117,6 @@ struct ObjyDump : public Callback {
           // create schema 
           bool bRet = createSchema();
           trx->commit();
-          trx->release();
         } 
         catch (ooKernelException& e)
         {
@@ -147,6 +146,8 @@ struct ObjyDump : public Callback {
         objyEdgeSimFile = fopen("objyEdgeSimFile.txt", "w");
         if(!objyEdgeSimFile) sysErrFatal("couldn't open file objyEdgeSimFile.txt for writing\n");
 
+        trx->start(OpenMode::Update);
+        
         return 0;
     }
 
@@ -203,6 +204,9 @@ struct ObjyDump : public Callback {
                 b->height,
                 outputMap.size()
             );
+            trx->commit();
+            trx->start(OpenMode::Update);
+            
             enoughProcessing = true;
         }
     }
@@ -443,6 +447,10 @@ struct ObjyDump : public Callback {
 
     virtual void wrapup() {
         fclose(objySimFile);
+        
+        if (trx->getOpenMode() != OpenMode::NotOpened)
+          trx->commit();
+        
         info("done\n");
     }
 };
@@ -554,7 +562,7 @@ bool createSchema()
                  .addAttribute<objy::uint_64>("id")
                  .addAttribute<objydata::Utf8String>("addressHash")
                  .addAttribute("address", addressRefSpec)
-                 .addAttribute<objy::uint_32>("value")
+                 .addAttribute<objy::uint_64>("value")
                  .build();
   
   
@@ -569,32 +577,86 @@ bool createSchema()
   
 }
 
-bool createBlock(int blkID, int version, uint8_t* bufPrevBlockHash, 
-        uint8_t* bufBlockMerkleRoot, long blkTime, uint8_t* bufBlockHash)
+bool createBlock(int id, int version, uint8_t* prevBlockHash, 
+        uint8_t* blockMerkleRoot, long blkTime, uint8_t* hash)
 {
   objydata::Class objectClass = objydata::lookupClass(BlockClassName);
+  objydata::Object object = objydata::createPersistentObject(objectClass);
   
+  object.attributeValue("id").set<objy::uint_64>(id);
+  object.attributeValue("version").set<objy::int_32>(version);
+  objydata::DateTime dateTime;
+  
+  object.attributeValue("time").set<objydata::DateTime>(objydata::DateTime(blkTime, 0));
+  
+  objydata::Utf8String value = objydata::createUtf8String();
+  value.set(reinterpret_cast<char*>(hash));
+  object.attributeValue("hash").set<objydata::Utf8String>(value);
+  value.set(reinterpret_cast<char*>(prevBlockHash));
+  object.attributeValue("prevBlockHash").set<objydata::Utf8String>(value);
+  value.set(reinterpret_cast<char*>(blockMerkleRoot));
+  object.attributeValue("merkleRootHash").set<objydata::Utf8String>(value);
+  
+  /**
+                 .addAttribute("prevBlock", refSpec)
+                 .addAttribute("transactions", transactionsSpec)
+  **/
   return true;
 }
 
-bool createTransaction(int txID, uint8_t* hash)
+bool createTransaction(int id, uint8_t* hash)
 {
   objydata::Class objectClass = objydata::lookupClass(TransactionClassName);
+  objydata::Object object = objydata::createPersistentObject(objectClass);
+  
+  object.attributeValue("id").set<objy::uint_64>(id);
+  objydata::Utf8String value = objydata::createUtf8String();
+  value.set(reinterpret_cast<char*>(hash));
+  object.attributeValue("hash").set<objydata::Utf8String>(value);
+  /**
+  //.addAttribute(objydata::LogicalType.DateTime, "time")
+  .addAttribute("inputs", inputsSpec)
+  .addAttribute("outputs", outputsSpec)
+   **/
   
   return true;
 }
 
-bool createInput(int inputID, uint8_t* bufUpTxHash, bool isCoinBase)
+bool createInput(int id, uint8_t* upTxHash, bool isCoinBase)
 {
   objydata::Class objectClass = objydata::lookupClass(InputClassName);
+  objydata::Object object = objydata::createPersistentObject(objectClass);
+
+  object.attributeValue("id").set<objy::uint_64>(id);
+  object.attributeValue("isCoinBase").set<bool>(isCoinBase);
   
+  objydata::Utf8String value = objydata::createUtf8String();
+  
+  value.set(reinterpret_cast<char*>(upTxHash));
+  object.attributeValue("upTxHash").set<objydata::Utf8String>(value);
+  
+/**
+ .addAttribute("upTx", transactionRefSpec)
+ **/  
   return true;
   
 }
 
-bool createOutput(int outputID, uint8_t* address, uint64_t value)
+bool createOutput(int id, uint8_t* address, uint64_t trxValue)
 {
   objydata::Class objectClass = objydata::lookupClass(OutputClassName);
+  objydata::Object object = objydata::createPersistentObject(objectClass);
   
+  object.attributeValue("id").set<objy::uint_64>(id);
+  object.attributeValue("value").set<objy::uint_64>(trxValue);
+  
+  objydata::Utf8String value = objydata::createUtf8String();
+  
+  value.set(reinterpret_cast<char*>(address));
+  object.attributeValue("addressHash").set<objydata::Utf8String>(value);
+  
+  /**
+  .addAttribute("address", addressRefSpec)
+  */
   return true;
 }
