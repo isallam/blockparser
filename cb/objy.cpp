@@ -15,8 +15,9 @@
 #include <objy/db/TransactionScope.h>
 #include <objy/data/Data.h>
 #include <objy/data/List.h>
+#include <objy/data/DataSpecificationBuilder.h>
 
-using namespace objy::db;
+namespace objydb = objy::db;
 namespace objydata = objy::data;
 namespace objyschema = objy::schema_provider;
 
@@ -54,8 +55,8 @@ struct ObjyDump : public Callback {
     
     // objy stuff
     std::string fdname;
-    objy::db::Connection* connection;
-	objy::db::Transaction* trx;
+    objydb::Connection* connection;
+	objydb::Transaction* trx;
     
     uint64_t txID;
     uint64_t blkID;
@@ -110,10 +111,10 @@ struct ObjyDump : public Callback {
         ooObjy::startup();
         
         //connection = ooObjy::getConnection(bootfile);
-		connection = Connection::connect(fdname.c_str());
+		connection = objydb::Connection::connect(fdname.c_str());
    
         try {
-          trx = new Transaction(OpenMode::Update);
+          trx = new objydb::Transaction(objydb::OpenMode::Update);
           // create schema 
           bool bRet = createSchema();
           trx->commit();
@@ -146,7 +147,7 @@ struct ObjyDump : public Callback {
         objyEdgeSimFile = fopen("objyEdgeSimFile.txt", "w");
         if(!objyEdgeSimFile) sysErrFatal("couldn't open file objyEdgeSimFile.txt for writing\n");
 
-        trx->start(OpenMode::Update);
+        trx->start(objydb::OpenMode::Update);
         
         return 0;
     }
@@ -205,7 +206,7 @@ struct ObjyDump : public Callback {
                 outputMap.size()
             );
             trx->commit();
-            trx->start(OpenMode::Update);
+            trx->start(objydb::OpenMode::Update);
             
             enoughProcessing = true;
         }
@@ -448,7 +449,7 @@ struct ObjyDump : public Callback {
     virtual void wrapup() {
         fclose(objySimFile);
         
-        if (trx->getOpenMode() != OpenMode::NotOpened)
+        if (trx->getOpenMode() != objydb::OpenMode::NotOpened)
           trx->commit();
         
         info("done\n");
@@ -465,7 +466,7 @@ bool createSchema()
 {
   // Block Class
    objydata::DataSpecificationHandle refSpec = 
-           objydata::DataSpecificationBuilder<objydata::LogicalType::Reference>()
+           objydata::DataSpecificationBuilder<objydata::LogicalType::Reference>()    
           .setReferencedClass(BlockClassName)
           .build();
 
