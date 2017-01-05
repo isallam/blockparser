@@ -203,6 +203,7 @@ struct ObjyDump : public Callback {
         toHex(bufPrevBlockHash, prevBlkHash.v);
         toHex(bufBlockMerkleRoot, blkMerkleRoot.v);
 
+        blkID = b->height-1;
         // id BIGINT PRIMARY KEY
         // hash BINARY(32)
         // time BIGINT
@@ -214,7 +215,7 @@ struct ObjyDump : public Callback {
                 "BlockMerkleRoot:%s,"
                 "TIME:%" PRIu64 ","
                 "BlockHash:%s)\n", 
-                (blkID = b->height-1),
+                blkID,
                 (uint64_t)version,
                 bufPrevBlockHash, 
                 bufBlockMerkleRoot,
