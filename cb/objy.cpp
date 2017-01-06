@@ -15,11 +15,11 @@
 #include <objy/db/TransactionScope.h>
 #include <objy/data/Data.h>
 #include <objy/data/List.h>
-#include <objy/data/DataSpecificationBuilder.h>
+
+#include "../objy/objyAccess.h"
 
 namespace objydb = objy::db;
 namespace objydata = objy::data;
-namespace objyschema = objy::schema_provider;
 
 
 static uint8_t empty[kSHA256ByteSize] = { 0x42 };
@@ -33,30 +33,8 @@ typedef GoogMap<Hash256, objydata::Reference, Hash256Hasher, Hash256Equal>::Map 
 typedef GoogMap<Hash160, objydata::Reference, Hash160Hasher, Hash160Equal>::Map AddrMap;
 
 
-bool createSchema();
-objydata::Reference createBlock(objydata::Class objClass, 
-        int id, int version, uint8_t* prevBlockHash, uint8_t* blockMerkleRoot, 
-        long blkTime, uint8_t* hash, objydata::Reference& prevBlock);
-objydata::Reference createTransaction(objydata::Class objClass,
-        int id, uint8_t* hash);
-objydata::Reference createInput(objydata::Class objClass, 
-        int id, uint8_t* upTxHash, objydata::Reference& upTrxRef, bool isCoinBase);
-objydata::Reference createOutput(objydata::Class objClass, int id, 
-        uint8_t* address, objydata::Reference& addressRef, uint64_t trxValue);
-objydata::Reference createAddress(objydata::Class objClass, uint8_t* hash);
-
-bool addTransactionToBlock(objydata::Reference& transaction, objydata::Reference& block);
-bool addInputToTransaction(objydata::Reference& input, objydata::Reference& transaction);
-bool addOutputToTransaction(objydata::Reference& output, objydata::Reference& transaction);
 
 
-
-// class names
-const char* BlockClassName        = "Block";
-const char* TransactionClassName  = "Transaction";
-const char* InputClassName        = "Input";
-const char* OutputClassName       = "Output";
-const char* AddressClassName      = "Address";
 
 
 struct ObjyDump : public Callback {
@@ -79,9 +57,10 @@ struct ObjyDump : public Callback {
     
     TrxMap    trxMap;
     AddrMap   addrMap;
-    OutputMap outputMap;
+    //OutputMap outputMap;
 
     optparse::OptionParser parser;
+    ObjyAccess objyAccess;
     
     bool dumpToFiles;
     bool enoughProcessing;
@@ -91,12 +70,7 @@ struct ObjyDump : public Callback {
     objydata::Reference currentBlock;
     objydata::Reference currentTransaction;
     
-    // cached classes
-    objydata::Class blockClass;
-    objydata::Class transactionClass;
-    objydata::Class inputClass;
-    objydata::Class outputClass;
-    objydata::Class addressClass;
+    
 
     ObjyDump() {
         parser
@@ -144,7 +118,7 @@ struct ObjyDump : public Callback {
         try {
           trx = new objydb::Transaction(objydb::OpenMode::Update);
           // create schema 
-          bool bRet = createSchema();
+          bool bRet = objyAccess.createSchema();
           
           trx->commit();
         } 
@@ -163,8 +137,8 @@ struct ObjyDump : public Callback {
         enoughProcessing = false;
 
         static uint64_t sz = 32 * 1000 * 1000;
-        outputMap.setEmptyKey(empty);
-        outputMap.resize(sz);
+        //outputMap.setEmptyKey(empty);
+        //outputMap.resize(sz);
         
         trxMap.setEmptyKey(empty);
         trxMap.resize(sz);
@@ -184,13 +158,7 @@ struct ObjyDump : public Callback {
 
         trx->start(objydb::OpenMode::Update);
         
-        // cache classes.
-        blockClass = objydata::lookupClass(BlockClassName);
-        transactionClass = objydata::lookupClass(TransactionClassName);
-        inputClass = objydata::lookupClass(InputClassName);
-        outputClass = objydata::lookupClass(OutputClassName);
-        addressClass = objydata::lookupClass(AddressClassName);
-
+        objyAccess.setupCache(); // cache schema and attributes for later.
         
         return 0;
     }
@@ -242,7 +210,7 @@ struct ObjyDump : public Callback {
         if (currentBlock)
           previousBlock = currentBlock;
         
-        currentBlock = createBlock(blockClass, blkID, version, bufPrevBlockHash, 
+        currentBlock = objyAccess.createBlock(blkID, version, bufPrevBlockHash, 
                 bufBlockMerkleRoot, blkTime, bufBlockHash, previousBlock);
         
         if(0==(b->height)%500) {
@@ -251,7 +219,7 @@ struct ObjyDump : public Callback {
                 "block=%8" PRIu64 " "
                 "nbOutputs=%8" PRIu64 "\r",
                 b->height,
-                outputMap.size()
+                outputID //outputMap.size()
             );
             trx->commit();
             trx->start(objydb::OpenMode::Update);
@@ -287,10 +255,10 @@ struct ObjyDump : public Callback {
         uint8_t *key = allocHash256();
         memcpy(key, hash, kSHA256ByteSize);
         
-        currentTransaction = createTransaction(transactionClass, txID, buf);
+        currentTransaction = objyAccess.createTransaction(txID, buf);
         trxMap[key] = currentTransaction;
         
-        addTransactionToBlock(currentTransaction, currentBlock);
+        objyAccess.addTransactionToBlock(currentTransaction, currentBlock);
 
     }
 
@@ -384,10 +352,10 @@ struct ObjyDump : public Callback {
           }
         }
         
-        objydata::Reference input = createInput(inputClass, inputID, bufUpTxHash, upTrxRef,
+        objydata::Reference input = objyAccess.createInput(inputID, bufUpTxHash, upTrxRef,
                 isCoinBase);
         
-        addInputToTransaction(input, currentTransaction);
+        objyAccess.addInputToTransaction(input, currentTransaction);
     }
     // Called when at the end of a TX input
     virtual void endInput(
@@ -430,7 +398,7 @@ struct ObjyDump : public Callback {
            AddrMap::iterator val = addrMap.find(pubKeyHash.v);
            if (addrMap.end() == val) {
              // create an address object
-             addressRef = createAddress(addressClass, address);
+             addressRef = objyAccess.createAddress(address);
              // add it to the map
               uint8_t *key = allocHash160();
               memcpy(key, pubKeyHash.v, kRIPEMD160ByteSize);
@@ -460,9 +428,9 @@ struct ObjyDump : public Callback {
             (uint32_t)outputIndex
         );
         
-        objydata::Reference output = createOutput(outputClass, outputID, address, 
+        objydata::Reference output = objyAccess.createOutput(outputID, address, 
                 addressRef, value);
-        addOutputToTransaction(output, currentTransaction);
+        objyAccess.addOutputToTransaction(output, currentTransaction);
         
         uint32_t oi = outputIndex;
         uint8_t *h = allocHash256();
@@ -472,71 +440,72 @@ struct ObjyDump : public Callback {
         uint32_t *h32 = reinterpret_cast<uint32_t*>(ih);
         h32[0] ^= oi;
 
-        outputMap[h] = outputID++;
+        //outputMap[h] = outputID++;
+        outputID++;
     }
 
-    virtual void edge(
-        uint64_t      value,
-        const uint8_t *upTXHash,
-        uint64_t      outputIndex,
-        const uint8_t *outputScript,
-        uint64_t      outputScriptSize,
-        const uint8_t *downTXHash,
-        uint64_t      inputIndex,
-        const uint8_t *inputScript,
-        uint64_t      inputScriptSize
-    ) {
-        uint256_t h;
-        uint32_t oi = outputIndex;
-        memcpy(h.v, upTXHash, kSHA256ByteSize);
-
-        uintptr_t ih = reinterpret_cast<uintptr_t>(h.v);
-        uint32_t *h32 = reinterpret_cast<uint32_t*>(ih);
-        h32[0] ^= oi;
-
-        OutputMap::iterator src = outputMap.find(h.v);
-        if(outputMap.end()==src) {
-            errFatal("unconnected input");
-        }
-
-        size_t size = kSHA256ByteSize;
-        uint8_t* bufUpTxHash = (uint8_t*)alloca(2*size + 1);
-        if (upTXHash != NULL)
-          toHex(bufUpTxHash, upTXHash);
-        else
-          *bufUpTxHash = '\n';
-        uint8_t* bufDownTxHash = (uint8_t*)alloca(2*size + 1);
-        toHex(bufDownTxHash, downTXHash);
-
-        // id BIGINT PRIMARY KEY
-        // outputID BIGINT
-        // txID BIGINT
-        // offset INT
-        if (dumpToFiles)
-          fprintf(
-            objyEdgeSimFile,
-            "Edge(InputId:%" PRIu64 ", "
-            "OutputId:%" PRIu64 ", "
-            "TxId:%" PRIu64 ", "
-            "InputIndex:%" PRIu32 ", "
-            //"Value:%" PRIu64 " # %.08f, "
-            "Value: %" PRIu64 ", "
-            "sourceTXOutputIndex:%d, "
-            "sourceTXHash:%s, "
-            "downTxHash:%s"
-            ")\n"
-            ,
-            inputID,
-            src->second,
-            txID,
-            (uint32_t)inputIndex,
-            //satoshisToNormaForm(value),
-            value,
-            (int)outputIndex,
-            bufUpTxHash,
-            bufDownTxHash
-        );
-    }
+//    virtual void edge(
+//        uint64_t      value,
+//        const uint8_t *upTXHash,
+//        uint64_t      outputIndex,
+//        const uint8_t *outputScript,
+//        uint64_t      outputScriptSize,
+//        const uint8_t *downTXHash,
+//        uint64_t      inputIndex,
+//        const uint8_t *inputScript,
+//        uint64_t      inputScriptSize
+//    ) {
+//        uint256_t h;
+//        uint32_t oi = outputIndex;
+//        memcpy(h.v, upTXHash, kSHA256ByteSize);
+//
+//        uintptr_t ih = reinterpret_cast<uintptr_t>(h.v);
+//        uint32_t *h32 = reinterpret_cast<uint32_t*>(ih);
+//        h32[0] ^= oi;
+//
+//        OutputMap::iterator src = outputMap.find(h.v);
+//        if(outputMap.end()==src) {
+//            errFatal("unconnected input");
+//        }
+//
+//        size_t size = kSHA256ByteSize;
+//        uint8_t* bufUpTxHash = (uint8_t*)alloca(2*size + 1);
+//        if (upTXHash != NULL)
+//          toHex(bufUpTxHash, upTXHash);
+//        else
+//          *bufUpTxHash = '\n';
+//        uint8_t* bufDownTxHash = (uint8_t*)alloca(2*size + 1);
+//        toHex(bufDownTxHash, downTXHash);
+//
+//        // id BIGINT PRIMARY KEY
+//        // outputID BIGINT
+//        // txID BIGINT
+//        // offset INT
+//        if (dumpToFiles)
+//          fprintf(
+//            objyEdgeSimFile,
+//            "Edge(InputId:%" PRIu64 ", "
+//            "OutputId:%" PRIu64 ", "
+//            "TxId:%" PRIu64 ", "
+//            "InputIndex:%" PRIu32 ", "
+//            //"Value:%" PRIu64 " # %.08f, "
+//            "Value: %" PRIu64 ", "
+//            "sourceTXOutputIndex:%d, "
+//            "sourceTXHash:%s, "
+//            "downTxHash:%s"
+//            ")\n"
+//            ,
+//            inputID,
+//            src->second,
+//            txID,
+//            (uint32_t)inputIndex,
+//            //satoshisToNormaForm(value),
+//            value,
+//            (int)outputIndex,
+//            bufUpTxHash,
+//            bufDownTxHash
+//        );
+//    }
 
     virtual void wrapup() {
         fclose(objySimFile);
@@ -551,286 +520,3 @@ struct ObjyDump : public Callback {
 static ObjyDump objyDump;
 
 
-// createSchema 
-// TBD: It's here for now but perhaps we need to move it to another location,
-//      once we refactor the concept of ingesting such data into Objy/Thingspan
-
-void addStringAttribute(objydata::ClassBuilder& builder,
-                        const char* name,
-                        objy::uint_16 length)
-{
-  objydata::DataSpecificationHandle spec = 
-          objydata::DataSpecificationBuilder<objydata::LogicalType::String>()
-    .setEncoding(objydata::StringEncoding::Utf8)
-    .setStorage(objydata::StringStorage::Fixed)
-    .setFixedLength(length)
-    .build();
-
-  builder.addAttribute(name, spec);
-}
-
-bool createSchema()
-{
-  // Block Class
-   objydata::DataSpecificationHandle blockRefSpec = 
-           objydata::DataSpecificationBuilder<objydata::LogicalType::Reference>()    
-          .setReferencedClass(BlockClassName)
-          .build();
-
- // transaction arrays 
-  objydata::DataSpecificationHandle transactionsElemSpec = 
-          objydata::DataSpecificationBuilder<objydata::LogicalType::Reference>()
-          //.setIdentifierSpecification(objydata::SpecificationFor<objy::uint_64>::get())
-          .setReferencedClass(TransactionClassName)
-          .build();
-                  
-  objydata::DataSpecificationHandle transactionsSpec = 
-          objydata::DataSpecificationBuilder<objydata::LogicalType::List>()
-          .setElementSpecification(transactionsElemSpec)
-          //.setCollectionName("SegmentedArray")
-          .build();
-
-  objydata::DataSpecificationHandle stringSpec = 
-        objydata::DataSpecificationBuilder<objydata::LogicalType::String>()
-    .setEncoding(objydata::StringEncoding::Utf8)
-    .setStorage(objydata::StringStorage::Fixed)
-    .setFixedLength(66)
-    .build();
-
-  objydata::Class blockClass = 
-                objydata::ClassBuilder(BlockClassName)
-                 .setSuperclass("ooObj")
-                 .addAttribute<objy::uint_64>("id")
-                 .addAttribute<objy::int_32>("version")
-                 .addAttribute<objydata::DateTime>("time")
-                 .addAttribute<objydata::Utf8String>("hash")
-                 .addAttribute<objydata::Utf8String>("prevBlockHash")
-                 .addAttribute<objydata::Utf8String>("merkleRootHash")
-                 //.addAttribute("hash", stringSpec)
-                 //.addAttribute("prevBlockHash", stringSpec)
-                 //.addAttribute("merkleRootHash", stringSpec)
-                 .addAttribute("prevBlock", blockRefSpec)
-                 .addAttribute("transactions", transactionsSpec)
-                 .build();
-
-  // Transaction Class
-  
-  objydata::DataSpecificationHandle inputsElemSpec = 
-          objydata::DataSpecificationBuilder<objydata::LogicalType::Reference>()
-          .setReferencedClass(InputClassName)
-          .build();
-                  
-  objydata::DataSpecificationHandle inputsSpec = 
-          objydata::DataSpecificationBuilder<objydata::LogicalType::List>()
-          .setElementSpecification(inputsElemSpec)
-          //.setCollectionName("SegmentedArray")
-          .build();
-  
-  objydata::DataSpecificationHandle outputsElemSpec = 
-          objydata::DataSpecificationBuilder<objydata::LogicalType::Reference>()
-          .setReferencedClass(OutputClassName)
-          .build();
-                  
-  objydata::DataSpecificationHandle outputsSpec = 
-          objydata::DataSpecificationBuilder<objydata::LogicalType::List>()
-          .setElementSpecification(outputsElemSpec)
-          //.setCollectionName("SegmentedArray")
-          .build();
-  
-  objydata::Class transactionClass = 
-                 objydata::ClassBuilder(TransactionClassName)
-                 .setSuperclass("ooObj")
-                 .addAttribute<objy::uint_64>("id")
-                 //.addAttribute(objydata::LogicalType.DateTime, "time")
-                 .addAttribute<objydata::Utf8String>("hash")
-                 //.addAttribute("hash", stringSpec)
-                 .addAttribute("inputs", inputsSpec)
-                 .addAttribute("outputs", outputsSpec)
-                 .build();
-  
-  // Input Class
-  objydata::DataSpecificationHandle transactionRefSpec = 
-           objydata::DataSpecificationBuilder<objydata::LogicalType::Reference>()
-          .setReferencedClass(TransactionClassName)
-          .build();
-  
-  objydata::Class inputClass = 
-                 objydata::ClassBuilder(InputClassName)
-                 .setSuperclass("ooObj")
-                 .addAttribute<objy::uint_64>("id")
-                 .addAttribute<objydata::Utf8String>("upTxHash")
-                 .addAttribute("upTx", transactionRefSpec)
-                 .addAttribute<bool>("isCoinBase")
-                 .build();
-
-  // Address Class
-  objydata::Class addressClass = 
-                 objydata::ClassBuilder(AddressClassName)
-                 .setSuperclass("ooObj")
-                 .addAttribute<objydata::Utf8String>("hash")
-                 .build();
-  
-  // output Class
-  objydata::DataSpecificationHandle addressRefSpec = 
-           objydata::DataSpecificationBuilder<objydata::LogicalType::Reference>()
-          .setReferencedClass(AddressClassName)
-          .build();
-
-  objydata::Class outputClass = 
-                 objydata::ClassBuilder(OutputClassName)
-                 .setSuperclass("ooObj")
-                 .addAttribute<objy::uint_64>("id")
-                 .addAttribute<objydata::Utf8String>("addressHash")
-                 .addAttribute("address", addressRefSpec)
-                 .addAttribute<objy::uint_64>("value")
-                 .build();
-  
-  
-  objyschema::SchemaProvider* provider = objyschema::SchemaProvider::defaultPersistentProvider();
-  provider->represent(blockClass);
-  provider->represent(transactionClass);
-  provider->represent(inputClass);
-  provider->represent(outputClass);
-  provider->represent(addressClass);
-  
-  return true;
-  
-}
-
-objydata::Reference createBlock(objydata::Class objectClass, 
-        int id, int version, uint8_t* prevBlockHash, 
-        uint8_t* blockMerkleRoot, long blkTime, uint8_t* hash, 
-        objydata::Reference& prevBlock)
-{
-  //objydata::Class objectClass = objydata::lookupClass(BlockClassName);
-  objydata::Object object = objydata::createPersistentObject(objectClass);
-  
-  object.attributeValue("id").set<objy::uint_64>(id);
-  object.attributeValue("version").set<objy::int_32>(version);
-  objydata::DateTime dateTime;
-  
-  object.attributeValue("time").set<objydata::DateTime>(objydata::DateTime(blkTime, 0));
-  
-  objydata::Utf8String value = objydata::createUtf8String();
-  value.set(reinterpret_cast<char*>(hash));
-  object.attributeValue("hash").set<objydata::Utf8String>(value);
-  value.set(reinterpret_cast<char*>(prevBlockHash));
-  object.attributeValue("prevBlockHash").set<objydata::Utf8String>(value);
-  value.set(reinterpret_cast<char*>(blockMerkleRoot));
-  object.attributeValue("merkleRootHash").set<objydata::Utf8String>(value);
-  
-  if (prevBlock)
-  {
-    object.attributeValue("prevBlock").set<objydata::Reference>(prevBlock);
-  }
-  /**
-                 .addAttribute("prevBlock", refSpec)
-  **/
-  return objydata::createReference(object);
-}
-
-objydata::Reference createTransaction(objydata::Class objectClass, 
-        int id, uint8_t* hash)
-{
-  //objydata::Class objectClass = objydata::lookupClass(TransactionClassName);
-  objydata::Object object = objydata::createPersistentObject(objectClass);
-  
-  object.attributeValue("id").set<objy::uint_64>(id);
-  objydata::Utf8String value = objydata::createUtf8String();
-  value.set(reinterpret_cast<char*>(hash));
-  object.attributeValue("hash").set<objydata::Utf8String>(value);
-  /**
-  //.addAttribute(objydata::LogicalType.DateTime, "time")
-   **/
-  
-  return objydata::createReference(object);
-}
-
-objydata::Reference createInput(objydata::Class objectClass, 
-        int id, uint8_t* upTxHash, 
-        objydata::Reference& upTrxRef, bool isCoinBase)
-{
-  //objydata::Class objectClass = objydata::lookupClass(InputClassName);
-  objydata::Object object = objydata::createPersistentObject(objectClass);
-
-  object.attributeValue("id").set<objy::uint_64>(id);
-  object.attributeValue("isCoinBase").set<bool>(isCoinBase);
-  
-  objydata::Utf8String value = objydata::createUtf8String();
-  
-  value.set(reinterpret_cast<char*>(upTxHash));
-  object.attributeValue("upTxHash").set<objydata::Utf8String>(value);
-  
-  if (!isCoinBase && upTrxRef)
-  {
-    object.attributeValue("upTx").set<objydata::Reference>(upTrxRef);
-  }
-
-  return objydata::createReference(object);
-}
-
-
-objydata::Reference createOutput(objydata::Class objectClass, 
-        int id, uint8_t* address, 
-        objydata::Reference& addressRef, uint64_t trxValue)
-{
-  //objydata::Class objectClass = objydata::lookupClass(OutputClassName);
-  objydata::Object object = objydata::createPersistentObject(objectClass);
-  
-  object.attributeValue("id").set<objy::uint_64>(id);
-  object.attributeValue("value").set<objy::uint_64>(trxValue);
-  
-  objydata::Utf8String value = objydata::createUtf8String();
-  
-  value.set(reinterpret_cast<char*>(address));
-  object.attributeValue("addressHash").set<objydata::Utf8String>(value);
-  
-  if (addressRef)
-  {
-    object.attributeValue("address").set<objydata::Reference>(addressRef);
-  }
-  return objydata::createReference(object);
-}
-
-objydata::Reference createAddress(objydata::Class objectClass, uint8_t* hash)
-{
-  //objydata::Class objectClass = objydata::lookupClass(AddressClassName);
-  objydata::Object object = objydata::createPersistentObject(objectClass);
-  
-  objydata::Utf8String value = objydata::createUtf8String();
-  value.set(reinterpret_cast<char*>(hash));
-  object.attributeValue("hash").set<objydata::Utf8String>(value);
-  
-  return objydata::createReference(object);
-}
-
-bool addTransactionToBlock(objydata::Reference& transaction, objydata::Reference& block)
-{
-//  objydata::List list = 
-//          block.referencedObject().attributeValue("transactions").get<objydata::List>();
-//  list.append(transaction);
-  
-  block.referencedObject().attributeValue("transactions").get<objydata::List>().append(transaction);
-  return true;
-}
-
-bool addInputToTransaction(objydata::Reference& input, objydata::Reference& transaction)
-{
-  
-//  objydata::List list = 
-//          transaction.referencedObject().attributeValue("inputs").get<objydata::List>();
-//  list.append(input);
-
-  transaction.referencedObject().attributeValue("inputs").get<objydata::List>().append(input);
-  return true;
-}
-
-bool addOutputToTransaction(objydata::Reference& output, objydata::Reference& transaction)
-{
-//  objydata::List list = 
-//          transaction.referencedObject().attributeValue("outputs").get<objydata::List>();
-//  list.append(output);
-  
-  transaction.referencedObject().attributeValue("outputs").get<objydata::List>().append(output);
-  return true;
-}

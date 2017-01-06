@@ -21,6 +21,7 @@ add_subdirectory (h9)
 add_subdirectory (scrypt) 
 add_subdirectory (crypto) 
 add_subdirectory (cb) 
+add_subdirectory (objy)
 
 set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_CXX_FLAGS})
 
