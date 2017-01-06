@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ObjyXml
+  timeStamp="1881173763"
+>
+  <Fd>
+    <Schema>
+      <Module name="Default" isDefault="true" schemaNumber="0">
+        <NameSpace name="Default" isDefault="true">
+          <Class name="Address"
+            typeNumber="1000000" versionNumber="1"
+            isInternal="false" markedDeleted="false"
+          >
+            <Shape id="1" name="Address"
+              shapeNumber="1000000" isLatestShape="true" hasVirtualTable="false"
+            >
+              <Bases>
+                <BaseShape baseShapeName="ooObj" baseShapeNumber="1001"
+                  id="1" visibility="public"
+                />
+              </Bases>
+              <Members>
+                <StringMember name="hash" id="2"
+                  position="1" visibility="private" arraySize="1" isVariableArray="false"
+                  type="utf8String" fixedLength="0"
+                />
+              </Members>
+            </Shape>
+          </Class>
+          <Class name="Block"
+            typeNumber="1000001" versionNumber="1"
+            isInternal="false" markedDeleted="false"
+          >
+            <Shape id="1" name="Block"
+              shapeNumber="1000001" isLatestShape="true" hasVirtualTable="false"
+            >
+              <Bases>
+                <BaseShape baseShapeName="ooObj" baseShapeNumber="1001"
+                  id="1" visibility="public"
+                />
+              </Bases>
+              <Members>
+                <BasicMember name="id" id="2"
+                  position="1" visibility="private" arraySize="1" isVariableArray="false"
+                  type="uint64" defaultUIntValue="0"
+                />
+                <BasicMember name="version" id="3"
+                  position="2" visibility="private" arraySize="1" isVariableArray="false"
+                  type="int32" defaultIntValue="0"
+                />
+                <DateTimeMember name="time" id="4"
+                  position="3" visibility="private" arraySize="1" isVariableArray="false"
+                  type="standardDateTime"
+                />
+                <StringMember name="hash" id="5"
+                  position="4" visibility="private" arraySize="1" isVariableArray="false"
+                  type="utf8String" fixedLength="0"
+                />
+                <StringMember name="prevBlockHash" id="6"
+                  position="5" visibility="private" arraySize="1" isVariableArray="false"
+                  type="utf8String" fixedLength="0"
+                />
+                <StringMember name="merkleRootHash" id="7"
+                  position="6" visibility="private" arraySize="1" isVariableArray="false"
+                  type="utf8String" fixedLength="0"
+                />
+                <RefMember name="prevBlock" id="8"
+                  position="7" visibility="private" arraySize="1" isVariableArray="false"
+                  referencedShapeNumber="1000001" isShort="false"
+                />
+                <RefMember name="transactions" id="9"
+                  position="8" visibility="private" arraySize="1" isVariableArray="true"
+                  referencedShapeNumber="1000004" isShort="false"
+                />
+              </Members>
+            </Shape>
+          </Class>
+          <Class name="Input"
+            typeNumber="1000002" versionNumber="1"
+            isInternal="false" markedDeleted="false"
+          >
+            <Shape id="1" name="Input"
+              shapeNumber="1000002" isLatestShape="true" hasVirtualTable="false"
+            >
+              <Bases>
+                <BaseShape baseShapeName="ooObj" baseShapeNumber="1001"
+                  id="1" visibility="public"
+                />
+              </Bases>
+              <Members>
+                <BasicMember name="id" id="2"
+                  position="1" visibility="private" arraySize="1" isVariableArray="false"
+                  type="uint64" defaultUIntValue="0"
+                />
+                <StringMember name="upTxHash" id="3"
+                  position="2" visibility="private" arraySize="1" isVariableArray="false"
+                  type="utf8String" fixedLength="0"
+                />
+                <RefMember name="upTx" id="4"
+                  position="3" visibility="private" arraySize="1" isVariableArray="false"
+                  referencedShapeNumber="1000004" isShort="false"
+                />
+                <BasicMember name="isCoinBase" id="5"
+                  position="4" visibility="private" arraySize="1" isVariableArray="false"
+                  type="boolean" defaultUIntValue="0"
+                />
+              </Members>
+            </Shape>
+          </Class>
+          <Class name="Output"
+            typeNumber="1000003" versionNumber="1"
+            isInternal="false" markedDeleted="false"
+          >
+            <Shape id="1" name="Output"
+              shapeNumber="1000003" isLatestShape="true" hasVirtualTable="false"
+            >
+              <Bases>
+                <BaseShape baseShapeName="ooObj" baseShapeNumber="1001"
+                  id="1" visibility="public"
+                />
+              </Bases>
+              <Members>
+                <BasicMember name="id" id="2"
+                  position="1" visibility="private" arraySize="1" isVariableArray="false"
+                  type="uint64" defaultUIntValue="0"
+                />
+                <StringMember name="addressHash" id="3"
+                  position="2" visibility="private" arraySize="1" isVariableArray="false"
+                  type="utf8String" fixedLength="0"
+                />
+                <RefMember name="address" id="4"
+                  position="3" visibility="private" arraySize="1" isVariableArray="false"
+                  referencedShapeNumber="1000000" isShort="false"
+                />
+                <BasicMember name="value" id="5"
+                  position="4" visibility="private" arraySize="1" isVariableArray="false"
+                  type="uint64" defaultUIntValue="0"
+                />
+              </Members>
+            </Shape>
+          </Class>
+          <Class name="Transaction"
+            typeNumber="1000004" versionNumber="1"
+            isInternal="false" markedDeleted="false"
+          >
+            <Shape id="1" name="Transaction"
+              shapeNumber="1000004" isLatestShape="true" hasVirtualTable="false"
+            >
+              <Bases>
+                <BaseShape baseShapeName="ooObj" baseShapeNumber="1001"
+                  id="1" visibility="public"
+                />
+              </Bases>
+              <Members>
+                <BasicMember name="id" id="2"
+                  position="1" visibility="private" arraySize="1" isVariableArray="false"
+                  type="uint64" defaultUIntValue="0"
+                />
+                <StringMember name="hash" id="3"
+                  position="2" visibility="private" arraySize="1" isVariableArray="false"
+                  type="utf8String" fixedLength="0"
+                />
+                <RefMember name="inputs" id="4"
+                  position="3" visibility="private" arraySize="1" isVariableArray="true"
+                  referencedShapeNumber="1000002" isShort="false"
+                />
+                <RefMember name="outputs" id="5"
+                  position="4" visibility="private" arraySize="1" isVariableArray="true"
+                  referencedShapeNumber="1000003" isShort="false"
+                />
+              </Members>
+            </Shape>
+          </Class>
+        </NameSpace>
+        <NameSpace name="objy.placement" isDefault="false">
+        </NameSpace>
+        <NameSpace name="infinitegraph.impl" isDefault="false">
+        </NameSpace>
+        <NameSpace name="infinitegraph.impl.plugins.pbp.pipelining" isDefault="false">
+        </NameSpace>
+        <NameSpace name="infinitegraph" isDefault="false">
+        </NameSpace>
+        <NameSpace name="objy.property" isDefault="false">
+        </NameSpace>
+      </Module>
+    </Schema>
+  </Fd>
+</ObjyXml>
