@@ -40,25 +40,62 @@ void addStringAttribute(objydata::ClassBuilder& builder,
  */
 bool ObjyAccess::createSchema()
 {
-  // Block Class
+  // -----------------------------------------------------------
+  // Some needed specs for various references and collections...
+  // -----------------------------------------------------------
+  
+  // Block Reference
    objydata::DataSpecificationHandle blockRefSpec = 
            objydata::DataSpecificationBuilder<objydata::LogicalType::Reference>()    
           .setReferencedClass(BlockClassName)
           .build();
 
- // transaction arrays 
-  objydata::DataSpecificationHandle transactionsElemSpec = 
+  // transaction Reference 
+  objydata::DataSpecificationHandle transactionRefSpec = 
           objydata::DataSpecificationBuilder<objydata::LogicalType::Reference>()
-          //.setIdentifierSpecification(objydata::SpecificationFor<objy::uint_64>::get())
           .setReferencedClass(TransactionClassName)
           .build();
                   
+   // transaction List                 
   objydata::DataSpecificationHandle transactionsSpec = 
           objydata::DataSpecificationBuilder<objydata::LogicalType::List>()
-          .setElementSpecification(transactionsElemSpec)
+          .setElementSpecification(transactionRefSpec)
           //.setCollectionName("SegmentedArray")
           .build();
 
+  // input reference
+  objydata::DataSpecificationHandle inputsRefSpec = 
+          objydata::DataSpecificationBuilder<objydata::LogicalType::Reference>()
+          .setReferencedClass(InputClassName)
+          .build();
+
+    // Input list
+  objydata::DataSpecificationHandle inputsSpec = 
+          objydata::DataSpecificationBuilder<objydata::LogicalType::List>()
+          .setElementSpecification(inputsRefSpec)
+          //.setCollectionName("SegmentedArray")
+          .build();
+  
+  // Output reference
+  objydata::DataSpecificationHandle outputRefSpec = 
+          objydata::DataSpecificationBuilder<objydata::LogicalType::Reference>()
+          .setReferencedClass(OutputClassName)
+          .build();
+  
+  // Output list
+  objydata::DataSpecificationHandle outputsSpec = 
+          objydata::DataSpecificationBuilder<objydata::LogicalType::List>()
+          .setElementSpecification(outputRefSpec)
+          //.setCollectionName("SegmentedArray")
+          .build();
+
+  // Address reference
+  objydata::DataSpecificationHandle addressRefSpec = 
+           objydata::DataSpecificationBuilder<objydata::LogicalType::Reference>()
+          .setReferencedClass(AddressClassName)
+          .build();
+  
+  // Embedded string spec (not used currently)
   objydata::DataSpecificationHandle stringSpec = 
         objydata::DataSpecificationBuilder<objydata::LogicalType::String>()
     .setEncoding(objydata::StringEncoding::Utf8)
@@ -66,6 +103,9 @@ bool ObjyAccess::createSchema()
     .setFixedLength(66)
     .build();
 
+  // -------------------
+  // Block Class
+  // -------------------
   objydata::Class blockClass = 
                 objydata::ClassBuilder(BlockClassName)
                  .setSuperclass("ooObj")
@@ -79,76 +119,56 @@ bool ObjyAccess::createSchema()
                  //.addAttribute("prevBlockHash", stringSpec)
                  //.addAttribute("merkleRootHash", stringSpec)
                  .addAttribute("prevBlock", blockRefSpec)
+                 .addAttribute("nextBlock", blockRefSpec)
                  .addAttribute("transactions", transactionsSpec)
                  .build();
 
+  
+  // -------------------
   // Transaction Class
-  
-  objydata::DataSpecificationHandle inputsElemSpec = 
-          objydata::DataSpecificationBuilder<objydata::LogicalType::Reference>()
-          .setReferencedClass(InputClassName)
-          .build();
-                  
-  objydata::DataSpecificationHandle inputsSpec = 
-          objydata::DataSpecificationBuilder<objydata::LogicalType::List>()
-          .setElementSpecification(inputsElemSpec)
-          //.setCollectionName("SegmentedArray")
-          .build();
-  
-  objydata::DataSpecificationHandle outputsElemSpec = 
-          objydata::DataSpecificationBuilder<objydata::LogicalType::Reference>()
-          .setReferencedClass(OutputClassName)
-          .build();
-                  
-  objydata::DataSpecificationHandle outputsSpec = 
-          objydata::DataSpecificationBuilder<objydata::LogicalType::List>()
-          .setElementSpecification(outputsElemSpec)
-          //.setCollectionName("SegmentedArray")
-          .build();
-  
+  // -------------------
   objydata::Class transactionClass = 
                  objydata::ClassBuilder(TransactionClassName)
                  .setSuperclass("ooObj")
                  .addAttribute<objy::uint_64>("id")
                  //.addAttribute(objydata::LogicalType.DateTime, "time")
                  .addAttribute<objydata::Utf8String>("hash")
-                 //.addAttribute("hash", stringSpec)
+                 .addAttribute("block", blockRefSpec)
                  .addAttribute("inputs", inputsSpec)
                  .addAttribute("outputs", outputsSpec)
                  .build();
   
+  // -------------------
   // Input Class
-  objydata::DataSpecificationHandle transactionRefSpec = 
-           objydata::DataSpecificationBuilder<objydata::LogicalType::Reference>()
-          .setReferencedClass(TransactionClassName)
-          .build();
-  
+  // -------------------
   objydata::Class inputClass = 
                  objydata::ClassBuilder(InputClassName)
                  .setSuperclass("ooObj")
                  .addAttribute<objy::uint_64>("id")
+                 .addAttribute("transaction", transactionRefSpec)
                  .addAttribute<objydata::Utf8String>("upTxHash")
                  .addAttribute("upTx", transactionRefSpec)
                  .addAttribute<bool>("isCoinBase")
                  .build();
 
+  // -------------------
   // Address Class
+  // -------------------
   objydata::Class addressClass = 
                  objydata::ClassBuilder(AddressClassName)
                  .setSuperclass("ooObj")
                  .addAttribute<objydata::Utf8String>("hash")
+                 .addAttribute("outputs", outputsSpec)
                  .build();
   
+  // -------------------
   // output Class
-  objydata::DataSpecificationHandle addressRefSpec = 
-           objydata::DataSpecificationBuilder<objydata::LogicalType::Reference>()
-          .setReferencedClass(AddressClassName)
-          .build();
-
+  // -------------------
   objydata::Class outputClass = 
                  objydata::ClassBuilder(OutputClassName)
                  .setSuperclass("ooObj")
                  .addAttribute<objy::uint_64>("id")
+                 .addAttribute("transaction", transactionRefSpec)
                  .addAttribute<objydata::Utf8String>("addressHash")
                  .addAttribute("address", addressRefSpec)
                  .addAttribute<objy::uint_64>("value")
@@ -162,10 +182,7 @@ bool ObjyAccess::createSchema()
   provider->represent(outputClass);
   provider->represent(addressClass);
   
-  // cache classess.
-  
   return true;
-  
 }
 
 /**
@@ -183,27 +200,37 @@ bool ObjyAccess::setupCache()
   blockClass.prevBlockHashAttr = blockClass.classRef.lookupAttribute("prevBlockHash");
   blockClass.merkleRootHashAttr = blockClass.classRef.lookupAttribute("merkleRootHash");
   blockClass.prevBlockAttr = blockClass.classRef.lookupAttribute("prevBlock");
+  blockClass.nextBlockAttr = blockClass.classRef.lookupAttribute("nextBlock");
+  blockClass.transactionsAttr = blockClass.classRef.lookupAttribute("transactions");
+  
 
   transactionClass.classRef = objydata::lookupClass(TransactionClassName);
   transactionClass.idAttr = transactionClass.classRef.lookupAttribute("id");
   transactionClass.hashAttr = transactionClass.classRef.lookupAttribute("hash");
+  transactionClass.blockAttr = transactionClass.classRef.lookupAttribute("block");
+  transactionClass.inputsAttr = transactionClass.classRef.lookupAttribute("inputs");
+  transactionClass.outputsAttr = transactionClass.classRef.lookupAttribute("outputs");
     
   inputClass.classRef = objydata::lookupClass(InputClassName);
   inputClass.idAttr = inputClass.classRef.lookupAttribute("id");
   inputClass.isCoinBaseAttr = inputClass.classRef.lookupAttribute("isCoinBase");
   inputClass.upTxHashAttr = inputClass.classRef.lookupAttribute("upTxHash"); 
   inputClass.upTxAttr = inputClass.classRef.lookupAttribute("upTx");
+  inputClass.transactionAttr = inputClass.classRef.lookupAttribute("transaction");
+  
     
   outputClass.classRef = objydata::lookupClass(OutputClassName);
   outputClass.idAttr = outputClass.classRef.lookupAttribute("id");
   outputClass.valueAttr = outputClass.classRef.lookupAttribute("value");
   outputClass.addressHashAttr = outputClass.classRef.lookupAttribute("addressHash"); 
   outputClass.addressAttr = outputClass.classRef.lookupAttribute("address");
+  outputClass.transactionAttr = outputClass.classRef.lookupAttribute("transaction");
     
   addressClass.classRef = objydata::lookupClass(AddressClassName);
   addressClass.hashAttr = addressClass.classRef.lookupAttribute("hash");
+  addressClass.outputsAttr = addressClass.classRef.lookupAttribute("outputs");
   
-    return true;
+  return true;
 }
 
 /**
@@ -224,47 +251,41 @@ objydata::Reference ObjyAccess::createBlock(
 {
   objydata::Object object = objydata::createPersistentObject(blockClass.classRef);
   
-  //object.attributeValue("id").set<objy::uint_64>(id);
   object.attributeValue(blockClass.idAttr, blockClass.value);
   blockClass.value.set(id);
   
-  //object.attributeValue("version").set<objy::int_32>(version);
   object.attributeValue(blockClass.versionAttr, blockClass.value);
   blockClass.value.set(version);
   
-  //objydata::DateTime dateTime;
-  
-  //object.attributeValue("time").set<objydata::DateTime>(objydata::DateTime(blkTime, 0));
   object.attributeValue(blockClass.timeAttr, blockClass.value);
   blockClass.value.set(objydata::DateTime(blkTime, 0));
   
-  //objydata::Utf8String value = objydata::createUtf8String();
   blockClass.stringValue.set(reinterpret_cast<char*>(hash));
-//  object.attributeValue("hash").set<objydata::Utf8String>(value);
   object.attributeValue(blockClass.hashAttr, blockClass.value);
-  //blockClass.value.set(reinterpret_cast<char*>(hash));
   blockClass.value.set(blockClass.stringValue);
   
   blockClass.stringValue.set(reinterpret_cast<char*>(prevBlockHash));
-//  object.attributeValue("prevBlockHash").set<objydata::Utf8String>(value);
   object.attributeValue(blockClass.prevBlockHashAttr, blockClass.value);
   blockClass.value.set(blockClass.stringValue);
 
   blockClass.stringValue.set(reinterpret_cast<char*>(blockMerkleRoot));
-//  object.attributeValue("merkleRootHash").set<objydata::Utf8String>(value);
   object.attributeValue(blockClass.merkleRootHashAttr, blockClass.value);
   blockClass.value.set(blockClass.stringValue);
 
+  objydata::Reference objectRef = objydata::createReference(object);
+  
   if (prevBlock)
   {
-//    object.attributeValue("prevBlock").set<objydata::Reference>(prevBlock);
     object.attributeValue(blockClass.prevBlockAttr, blockClass.value);
     blockClass.value.set(prevBlock);
+    // set next block on prevBlock
+    prevBlock.referencedObject().attributeValue(blockClass.nextBlockAttr, blockClass.value);
+    blockClass.value.set<objydata::Reference>(objectRef);
   }
   /**
                  .addAttribute("prevBlock", refSpec)
   **/
-  return objydata::createReference(object);
+  return objectRef;
 }
 
 /**
@@ -309,24 +330,19 @@ objydata::Reference ObjyAccess::createInput(
 {
   objydata::Object object = objydata::createPersistentObject(inputClass.classRef);
 
-  //object.attributeValue("id").set<objy::uint_64>(id);
   object.attributeValue(inputClass.idAttr, inputClass.value);
   inputClass.value.set(id);
   
-  //object.attributeValue("isCoinBase").set<bool>(isCoinBase);
   object.attributeValue(inputClass.isCoinBaseAttr, inputClass.value);
   inputClass.value.set(isCoinBase);
   
-  //objydata::Utf8String value = objydata::createUtf8String();
   inputClass.stringValue.set(reinterpret_cast<char*>(upTxHash));
-  //object.attributeValue("upTxHash").set<objydata::Utf8String>(value);
   
   object.attributeValue(inputClass.upTxHashAttr, inputClass.value);
   inputClass.value.set(inputClass.stringValue);
   
   if (!isCoinBase && upTrxRef)
   {
-    //object.attributeValue("upTx").set<objydata::Reference>(upTrxRef);
     object.attributeValue(inputClass.upTxAttr, inputClass.value);
     inputClass.value.set(upTrxRef);
   }
@@ -348,27 +364,30 @@ objydata::Reference ObjyAccess::createOutput(
 {
   objydata::Object object = objydata::createPersistentObject(outputClass.classRef);
   
-  //object.attributeValue("id").set<objy::uint_64>(id);
   object.attributeValue(outputClass.idAttr, outputClass.value);
   outputClass.value.set(id);
   
-  //object.attributeValue("value").set<objy::uint_64>(trxValue);
   object.attributeValue(outputClass.valueAttr, outputClass.value);
   outputClass.value.set(trxValue);
   
-  //objydata::Utf8String value = objydata::createUtf8String();
   outputClass.stringValue.set(reinterpret_cast<char*>(address));
-  //object.attributeValue("addressHash").set<objydata::Utf8String>(value);
   object.attributeValue(outputClass.addressHashAttr, outputClass.value);
   outputClass.value.set(outputClass.stringValue);
   
+  objydata::Reference objectRef = objydata::createReference(object);
+  
   if (addressRef)
   {
-    //object.attributeValue("address").set<objydata::Reference>(addressRef);
     object.attributeValue(outputClass.addressAttr, outputClass.value);
     outputClass.value.set(addressRef);
+    
+    // add output to address
+    addressRef.referencedObject().attributeValue(addressClass.outputsAttr, addressClass.value);
+    addressClass.value.get<objydata::List>().append(objectRef);
+
+    
   }
-  return objydata::createReference(object);
+  return objectRef;
 }
 
 /**
@@ -380,42 +399,49 @@ objydata::Reference ObjyAccess::createAddress(uint8_t* hash)
 {
   objydata::Object object = objydata::createPersistentObject(addressClass.classRef);
   
-  //objydata::Utf8String value = objydata::createUtf8String();
   addressClass.stringValue.set(reinterpret_cast<char*>(hash));
-  //object.attributeValue("hash").set<objydata::Utf8String>(value);
-  
   object.attributeValue(addressClass.hashAttr, addressClass.value);
   addressClass.value.set(addressClass.stringValue);
+  
   return objydata::createReference(object);
 }
 
 bool ObjyAccess::addTransactionToBlock(objydata::Reference& transaction, objydata::Reference& block)
 {
-//  objydata::List list = 
-//          block.referencedObject().attributeValue("transactions").get<objydata::List>();
-//  list.append(transaction);
+
+  //block.referencedObject().attributeValue("transactions").get<objydata::List>().append(transaction);
+  block.referencedObject().attributeValue(blockClass.transactionsAttr, blockClass.value);
+  blockClass.value.get<objydata::List>().append(transaction);
   
-  block.referencedObject().attributeValue("transactions").get<objydata::List>().append(transaction);
+  // add block to transaction.
+  transaction.referencedObject().attributeValue(transactionClass.blockAttr, transactionClass.value);
+  transactionClass.value.set<objydata::Reference>(block);
+  
   return true;
 }
 
 bool ObjyAccess::addInputToTransaction(objydata::Reference& input, objydata::Reference& transaction)
 {
+  //transaction.referencedObject().attributeValue("inputs").get<objydata::List>().append(input);
+  transaction.referencedObject().attributeValue(transactionClass.inputsAttr, transactionClass.value);
+  transactionClass.value.get<objydata::List>().append(input);
   
-//  objydata::List list = 
-//          transaction.referencedObject().attributeValue("inputs").get<objydata::List>();
-//  list.append(input);
-
-  transaction.referencedObject().attributeValue("inputs").get<objydata::List>().append(input);
+  // add transaction to input
+  input.referencedObject().attributeValue(inputClass.transactionAttr, inputClass.value);
+  inputClass.value.set<objydata::Reference>(transaction);
+  
   return true;
 }
 
 bool ObjyAccess::addOutputToTransaction(objydata::Reference& output, objydata::Reference& transaction)
-{
-//  objydata::List list = 
-//          transaction.referencedObject().attributeValue("outputs").get<objydata::List>();
-//  list.append(output);
+{  
+  //transaction.referencedObject().attributeValue("outputs").get<objydata::List>().append(output);
+  transaction.referencedObject().attributeValue(transactionClass.outputsAttr, transactionClass.value);
+  transactionClass.value.get<objydata::List>().append(output);
   
-  transaction.referencedObject().attributeValue("outputs").get<objydata::List>().append(output);
+  // add transaction to input
+  output.referencedObject().attributeValue(inputClass.transactionAttr, outputClass.value);
+  outputClass.value.set<objydata::Reference>(transaction);
+
   return true;
 }

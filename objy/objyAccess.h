@@ -27,6 +27,8 @@ namespace objyschema = objy::schema_provider;
 struct TheClass {
   char* name;
   objydata::Class classRef;
+  objydata::Variable value;
+  objydata::Utf8String stringValue = objydata::createUtf8String();
 };
 
 struct BlockClass : TheClass {
@@ -37,15 +39,16 @@ struct BlockClass : TheClass {
   objydata::Attribute prevBlockHashAttr;
   objydata::Attribute merkleRootHashAttr;
   objydata::Attribute prevBlockAttr;
-  objydata::Variable value;
-  objydata::Utf8String stringValue = objydata::createUtf8String();
+  objydata::Attribute nextBlockAttr;
+  objydata::Attribute transactionsAttr;
 };
 
 struct TransactionClass : TheClass {
   objydata::Attribute idAttr;
   objydata::Attribute hashAttr;
-  objydata::Variable value;
-  objydata::Utf8String stringValue = objydata::createUtf8String();
+  objydata::Attribute blockAttr;
+  objydata::Attribute inputsAttr;
+  objydata::Attribute outputsAttr;
 };
 
 struct InputClass : TheClass {
@@ -53,8 +56,7 @@ struct InputClass : TheClass {
   objydata::Attribute isCoinBaseAttr;
   objydata::Attribute upTxHashAttr; 
   objydata::Attribute upTxAttr;
-  objydata::Variable value;
-  objydata::Utf8String stringValue = objydata::createUtf8String();
+  objydata::Attribute transactionAttr;
 };
 
 struct OutputClass : TheClass {
@@ -62,14 +64,12 @@ struct OutputClass : TheClass {
   objydata::Attribute valueAttr;
   objydata::Attribute addressHashAttr; 
   objydata::Attribute addressAttr;
-  objydata::Variable value;
-  objydata::Utf8String stringValue = objydata::createUtf8String();
+  objydata::Attribute transactionAttr;
 };
 
 struct AddressClass : TheClass {
   objydata::Attribute hashAttr;
-  objydata::Variable value;
-  objydata::Utf8String stringValue = objydata::createUtf8String();
+  objydata::Attribute outputsAttr;
 };
 
 class ObjyAccess {

@@ -41,7 +41,7 @@
           <SingleDatabaseGroup/>
           <DatabaseGroupConfiguration selection="Any">
             <DatabaseConfiguration
-              databasePageSize="0"
+              databasePageSize="16384"
 							fileSizeLimit="200000k"/>
           </DatabaseGroupConfiguration>
         </Scope>
@@ -62,7 +62,7 @@
               initialNumberOfPages="0" pageLimit="50000"
               placeInOwnFile="false"
               maintainObjectCounts="true">
-							<ObjectCountLimit objectClass="Block" objectLimit="10000" containerIsFullAtLimit="false"/>
+							<ObjectCountLimit objectClass="Block" objectLimit="20000" containerIsFullAtLimit="false"/>
 						</ContainerConfiguration>
           </ContainerGroupConfiguration>
         </Scope>

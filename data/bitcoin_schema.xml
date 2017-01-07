@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ObjyXml
-  timeStamp="1881173763"
+  timeStamp="1997135078"
 >
   <Fd>
     <Schema>
@@ -22,6 +22,10 @@
                 <StringMember name="hash" id="2"
                   position="1" visibility="private" arraySize="1" isVariableArray="false"
                   type="utf8String" fixedLength="0"
+                />
+                <RefMember name="outputs" id="3"
+                  position="2" visibility="private" arraySize="1" isVariableArray="true"
+                  referencedShapeNumber="1000003" isShort="false"
                 />
               </Members>
             </Shape>
@@ -67,8 +71,12 @@
                   position="7" visibility="private" arraySize="1" isVariableArray="false"
                   referencedShapeNumber="1000001" isShort="false"
                 />
-                <RefMember name="transactions" id="9"
-                  position="8" visibility="private" arraySize="1" isVariableArray="true"
+                <RefMember name="nextBlock" id="9"
+                  position="8" visibility="private" arraySize="1" isVariableArray="false"
+                  referencedShapeNumber="1000001" isShort="false"
+                />
+                <RefMember name="transactions" id="10"
+                  position="9" visibility="private" arraySize="1" isVariableArray="true"
                   referencedShapeNumber="1000004" isShort="false"
                 />
               </Members>
@@ -91,16 +99,20 @@
                   position="1" visibility="private" arraySize="1" isVariableArray="false"
                   type="uint64" defaultUIntValue="0"
                 />
-                <StringMember name="upTxHash" id="3"
+                <RefMember name="transaction" id="3"
                   position="2" visibility="private" arraySize="1" isVariableArray="false"
-                  type="utf8String" fixedLength="0"
-                />
-                <RefMember name="upTx" id="4"
-                  position="3" visibility="private" arraySize="1" isVariableArray="false"
                   referencedShapeNumber="1000004" isShort="false"
                 />
-                <BasicMember name="isCoinBase" id="5"
+                <StringMember name="upTxHash" id="4"
+                  position="3" visibility="private" arraySize="1" isVariableArray="false"
+                  type="utf8String" fixedLength="0"
+                />
+                <RefMember name="upTx" id="5"
                   position="4" visibility="private" arraySize="1" isVariableArray="false"
+                  referencedShapeNumber="1000004" isShort="false"
+                />
+                <BasicMember name="isCoinBase" id="6"
+                  position="5" visibility="private" arraySize="1" isVariableArray="false"
                   type="boolean" defaultUIntValue="0"
                 />
               </Members>
@@ -123,16 +135,20 @@
                   position="1" visibility="private" arraySize="1" isVariableArray="false"
                   type="uint64" defaultUIntValue="0"
                 />
-                <StringMember name="addressHash" id="3"
+                <RefMember name="transaction" id="3"
                   position="2" visibility="private" arraySize="1" isVariableArray="false"
+                  referencedShapeNumber="1000004" isShort="false"
+                />
+                <StringMember name="addressHash" id="4"
+                  position="3" visibility="private" arraySize="1" isVariableArray="false"
                   type="utf8String" fixedLength="0"
                 />
-                <RefMember name="address" id="4"
-                  position="3" visibility="private" arraySize="1" isVariableArray="false"
+                <RefMember name="address" id="5"
+                  position="4" visibility="private" arraySize="1" isVariableArray="false"
                   referencedShapeNumber="1000000" isShort="false"
                 />
-                <BasicMember name="value" id="5"
-                  position="4" visibility="private" arraySize="1" isVariableArray="false"
+                <BasicMember name="value" id="6"
+                  position="5" visibility="private" arraySize="1" isVariableArray="false"
                   type="uint64" defaultUIntValue="0"
                 />
               </Members>
@@ -159,12 +175,16 @@
                   position="2" visibility="private" arraySize="1" isVariableArray="false"
                   type="utf8String" fixedLength="0"
                 />
-                <RefMember name="inputs" id="4"
-                  position="3" visibility="private" arraySize="1" isVariableArray="true"
+                <RefMember name="block" id="4"
+                  position="3" visibility="private" arraySize="1" isVariableArray="false"
+                  referencedShapeNumber="1000001" isShort="false"
+                />
+                <RefMember name="inputs" id="5"
+                  position="4" visibility="private" arraySize="1" isVariableArray="true"
                   referencedShapeNumber="1000002" isShort="false"
                 />
-                <RefMember name="outputs" id="5"
-                  position="4" visibility="private" arraySize="1" isVariableArray="true"
+                <RefMember name="outputs" id="6"
+                  position="5" visibility="private" arraySize="1" isVariableArray="true"
                   referencedShapeNumber="1000003" isShort="false"
                 />
               </Members>

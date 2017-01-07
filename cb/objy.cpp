@@ -213,7 +213,7 @@ struct ObjyDump : public Callback {
         currentBlock = objyAccess.createBlock(blkID, version, bufPrevBlockHash, 
                 bufBlockMerkleRoot, blkTime, bufBlockHash, previousBlock);
         
-        if(0==(b->height)%500) {
+        if(0==(b->height)%1000) {
             fprintf(
                 stderr,
                 "block=%8" PRIu64 " "
@@ -404,7 +404,10 @@ struct ObjyDump : public Callback {
               memcpy(key, pubKeyHash.v, kRIPEMD160ByteSize);
               addrMap[key] = addressRef;
            }
-           
+           else 
+           {
+             addressRef = val->second;
+           }
         }
 
         // id BIGINT PRIMARY KEY
