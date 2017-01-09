@@ -24,14 +24,17 @@ namespace objydb = objy::db;
 namespace objydata = objy::data;
 namespace objyschema = objy::schema_provider;
 
-struct TheClass {
+
+struct ClassCache {
   char* name;
   objydata::Class classRef;
   objydata::Variable value;
-  objydata::Utf8String stringValue = objydata::createUtf8String();
+  //objydata::Utf8String stringValue = objydata::createUtf8String();
+  objydata::ByteString stringValue = objydata::createByteString();
 };
 
-struct BlockClass : TheClass {
+
+struct BlockClass : ClassCache {
   objydata::Attribute idAttr;
   objydata::Attribute versionAttr;
   objydata::Attribute timeAttr; 
@@ -43,7 +46,9 @@ struct BlockClass : TheClass {
   objydata::Attribute transactionsAttr;
 };
 
-struct TransactionClass : TheClass {
+
+
+struct TransactionClass : ClassCache {
   objydata::Attribute idAttr;
   objydata::Attribute hashAttr;
   objydata::Attribute blockAttr;
@@ -51,7 +56,9 @@ struct TransactionClass : TheClass {
   objydata::Attribute outputsAttr;
 };
 
-struct InputClass : TheClass {
+
+
+struct InputClass : ClassCache {
   objydata::Attribute idAttr;
   objydata::Attribute isCoinBaseAttr;
   objydata::Attribute upTxHashAttr; 
@@ -59,7 +66,8 @@ struct InputClass : TheClass {
   objydata::Attribute transactionAttr;
 };
 
-struct OutputClass : TheClass {
+
+struct OutputClass : ClassCache {
   objydata::Attribute idAttr;
   objydata::Attribute valueAttr;
   objydata::Attribute addressHashAttr; 
@@ -67,10 +75,11 @@ struct OutputClass : TheClass {
   objydata::Attribute transactionAttr;
 };
 
-struct AddressClass : TheClass {
+struct AddressClass : ClassCache {
   objydata::Attribute hashAttr;
   objydata::Attribute outputsAttr;
 };
+
 
 class ObjyAccess {
 public:
@@ -94,27 +103,15 @@ public:
   bool addOutputToTransaction(objydata::Reference& output, objydata::Reference& transaction);
 
 private:
-  
-  // class names
-  const char* BlockClassName        = "Block";
-  const char* TransactionClassName  = "Transaction";
-  const char* InputClassName        = "Input";
-  const char* OutputClassName       = "Output";
-  const char* AddressClassName      = "Address";
 
-// cached classes
-//  objydata::Class blockClass;
-//  objydata::Class transactionClass;
-//  objydata::Class inputClass;
-//  objydata::Class outputClass;
-//  objydata::Class addressClass;
-
-// more caching 
+  // more caching 
   BlockClass blockClass;
   TransactionClass transactionClass;
   InputClass inputClass;
   OutputClass outputClass;
   AddressClass addressClass;
+  
+  
 };
 
 #endif /* OBJYSCHEMA_H */

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ObjyXml
-  timeStamp="1997135078"
+  timeStamp="2227388803"
 >
   <Fd>
     <Schema>
@@ -19,11 +19,11 @@
                 />
               </Bases>
               <Members>
-                <StringMember name="hash" id="2"
+                <StringMember name="m_Hash" id="2"
                   position="1" visibility="private" arraySize="1" isVariableArray="false"
-                  type="utf8String" fixedLength="0"
+                  type="vString" fixedLength="0"
                 />
-                <RefMember name="outputs" id="3"
+                <RefMember name="m_Outputs" id="3"
                   position="2" visibility="private" arraySize="1" isVariableArray="true"
                   referencedShapeNumber="1000003" isShort="false"
                 />
@@ -43,39 +43,39 @@
                 />
               </Bases>
               <Members>
-                <BasicMember name="id" id="2"
+                <BasicMember name="m_Id" id="2"
                   position="1" visibility="private" arraySize="1" isVariableArray="false"
                   type="uint64" defaultUIntValue="0"
                 />
-                <BasicMember name="version" id="3"
+                <BasicMember name="m_Version" id="3"
                   position="2" visibility="private" arraySize="1" isVariableArray="false"
                   type="int32" defaultIntValue="0"
                 />
-                <DateTimeMember name="time" id="4"
+                <DateTimeMember name="m_Time" id="4"
                   position="3" visibility="private" arraySize="1" isVariableArray="false"
                   type="standardDateTime"
                 />
-                <StringMember name="hash" id="5"
+                <StringMember name="m_Hash" id="5"
                   position="4" visibility="private" arraySize="1" isVariableArray="false"
-                  type="utf8String" fixedLength="0"
+                  type="vString" fixedLength="0"
                 />
-                <StringMember name="prevBlockHash" id="6"
+                <StringMember name="m_PrevBlockHash" id="6"
                   position="5" visibility="private" arraySize="1" isVariableArray="false"
-                  type="utf8String" fixedLength="0"
+                  type="vString" fixedLength="0"
                 />
-                <StringMember name="merkleRootHash" id="7"
+                <StringMember name="m_MerkleRootHash" id="7"
                   position="6" visibility="private" arraySize="1" isVariableArray="false"
-                  type="utf8String" fixedLength="0"
+                  type="vString" fixedLength="0"
                 />
-                <RefMember name="prevBlock" id="8"
+                <RefMember name="m_PrevBlock" id="8"
                   position="7" visibility="private" arraySize="1" isVariableArray="false"
                   referencedShapeNumber="1000001" isShort="false"
                 />
-                <RefMember name="nextBlock" id="9"
+                <RefMember name="m_NextBlock" id="9"
                   position="8" visibility="private" arraySize="1" isVariableArray="false"
                   referencedShapeNumber="1000001" isShort="false"
                 />
-                <RefMember name="transactions" id="10"
+                <RefMember name="m_Transactions" id="10"
                   position="9" visibility="private" arraySize="1" isVariableArray="true"
                   referencedShapeNumber="1000004" isShort="false"
                 />
@@ -95,23 +95,23 @@
                 />
               </Bases>
               <Members>
-                <BasicMember name="id" id="2"
+                <BasicMember name="m_Id" id="2"
                   position="1" visibility="private" arraySize="1" isVariableArray="false"
                   type="uint64" defaultUIntValue="0"
                 />
-                <RefMember name="transaction" id="3"
+                <RefMember name="m_Transaction" id="3"
                   position="2" visibility="private" arraySize="1" isVariableArray="false"
                   referencedShapeNumber="1000004" isShort="false"
                 />
-                <StringMember name="upTxHash" id="4"
+                <StringMember name="m_UpTxHash" id="4"
                   position="3" visibility="private" arraySize="1" isVariableArray="false"
-                  type="utf8String" fixedLength="0"
+                  type="vString" fixedLength="0"
                 />
-                <RefMember name="upTx" id="5"
+                <RefMember name="m_UpTx" id="5"
                   position="4" visibility="private" arraySize="1" isVariableArray="false"
                   referencedShapeNumber="1000004" isShort="false"
                 />
-                <BasicMember name="isCoinBase" id="6"
+                <BasicMember name="m_IsCoinBase" id="6"
                   position="5" visibility="private" arraySize="1" isVariableArray="false"
                   type="boolean" defaultUIntValue="0"
                 />
@@ -131,23 +131,23 @@
                 />
               </Bases>
               <Members>
-                <BasicMember name="id" id="2"
+                <BasicMember name="m_Id" id="2"
                   position="1" visibility="private" arraySize="1" isVariableArray="false"
                   type="uint64" defaultUIntValue="0"
                 />
-                <RefMember name="transaction" id="3"
+                <RefMember name="m_Transaction" id="3"
                   position="2" visibility="private" arraySize="1" isVariableArray="false"
                   referencedShapeNumber="1000004" isShort="false"
                 />
-                <StringMember name="addressHash" id="4"
+                <StringMember name="m_AddressHash" id="4"
                   position="3" visibility="private" arraySize="1" isVariableArray="false"
-                  type="utf8String" fixedLength="0"
+                  type="vString" fixedLength="0"
                 />
-                <RefMember name="address" id="5"
+                <RefMember name="m_Address" id="5"
                   position="4" visibility="private" arraySize="1" isVariableArray="false"
                   referencedShapeNumber="1000000" isShort="false"
                 />
-                <BasicMember name="value" id="6"
+                <BasicMember name="m_Value" id="6"
                   position="5" visibility="private" arraySize="1" isVariableArray="false"
                   type="uint64" defaultUIntValue="0"
                 />
@@ -167,23 +167,23 @@
                 />
               </Bases>
               <Members>
-                <BasicMember name="id" id="2"
+                <BasicMember name="m_Id" id="2"
                   position="1" visibility="private" arraySize="1" isVariableArray="false"
                   type="uint64" defaultUIntValue="0"
                 />
-                <StringMember name="hash" id="3"
+                <StringMember name="m_Hash" id="3"
                   position="2" visibility="private" arraySize="1" isVariableArray="false"
-                  type="utf8String" fixedLength="0"
+                  type="vString" fixedLength="0"
                 />
-                <RefMember name="block" id="4"
+                <RefMember name="m_Block" id="4"
                   position="3" visibility="private" arraySize="1" isVariableArray="false"
                   referencedShapeNumber="1000001" isShort="false"
                 />
-                <RefMember name="inputs" id="5"
+                <RefMember name="m_Inputs" id="5"
                   position="4" visibility="private" arraySize="1" isVariableArray="true"
                   referencedShapeNumber="1000002" isShort="false"
                 />
-                <RefMember name="outputs" id="6"
+                <RefMember name="m_Outputs" id="6"
                   position="5" visibility="private" arraySize="1" isVariableArray="true"
                   referencedShapeNumber="1000003" isShort="false"
                 />

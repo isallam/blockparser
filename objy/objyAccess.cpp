@@ -11,6 +11,7 @@
  * Created on January 5, 2017, 4:06 PM
  */
 
+#include "objyMeta.h"
 #include "objyAccess.h"
 
 ObjyAccess::ObjyAccess() {
@@ -89,13 +90,21 @@ bool ObjyAccess::createSchema()
           //.setCollectionName("SegmentedArray")
           .build();
 
+  
+  // Output list for address
+  objydata::DataSpecificationHandle outputsForAddressSpec = 
+          objydata::DataSpecificationBuilder<objydata::LogicalType::List>()
+          .setElementSpecification(outputRefSpec)
+          //.setCollectionName("SegmentedArray")
+          .build();
+  
   // Address reference
   objydata::DataSpecificationHandle addressRefSpec = 
            objydata::DataSpecificationBuilder<objydata::LogicalType::Reference>()
           .setReferencedClass(AddressClassName)
           .build();
   
-  // Embedded string spec (not used currently)
+  // Embedded string spec (currently not used)
   objydata::DataSpecificationHandle stringSpec = 
         objydata::DataSpecificationBuilder<objydata::LogicalType::String>()
     .setEncoding(objydata::StringEncoding::Utf8)
@@ -103,24 +112,25 @@ bool ObjyAccess::createSchema()
     .setFixedLength(66)
     .build();
 
+  
   // -------------------
   // Block Class
   // -------------------
   objydata::Class blockClass = 
                 objydata::ClassBuilder(BlockClassName)
                  .setSuperclass("ooObj")
-                 .addAttribute<objy::uint_64>("id")
-                 .addAttribute<objy::int_32>("version")
-                 .addAttribute<objydata::DateTime>("time")
-                 .addAttribute<objydata::Utf8String>("hash")
-                 .addAttribute<objydata::Utf8String>("prevBlockHash")
-                 .addAttribute<objydata::Utf8String>("merkleRootHash")
+                 .addAttribute<objy::uint_64>(BlockIdAttr)
+                 .addAttribute<objy::int_32>(BlockVersionAttr)
+                 .addAttribute<objydata::DateTime>(BlockTimeAttr)
+                 .addAttribute<objydata::ByteString /*Utf8String*/>(BlockHashAttr)
+                 .addAttribute<objydata::ByteString /*Utf8String*/>(BlockPrevBlockHashAttr)
+                 .addAttribute<objydata::ByteString /*Utf8String*/>(BlockMerkleRootHashAttr)
                  //.addAttribute("hash", stringSpec)
                  //.addAttribute("prevBlockHash", stringSpec)
                  //.addAttribute("merkleRootHash", stringSpec)
-                 .addAttribute("prevBlock", blockRefSpec)
-                 .addAttribute("nextBlock", blockRefSpec)
-                 .addAttribute("transactions", transactionsSpec)
+                 .addAttribute(BlockPrevBlockAttr, blockRefSpec)
+                 .addAttribute(BlockNextBlockAttr, blockRefSpec)
+                 .addAttribute(BlockTransactionsAttr, transactionsSpec)
                  .build();
 
   
@@ -130,12 +140,12 @@ bool ObjyAccess::createSchema()
   objydata::Class transactionClass = 
                  objydata::ClassBuilder(TransactionClassName)
                  .setSuperclass("ooObj")
-                 .addAttribute<objy::uint_64>("id")
+                 .addAttribute<objy::uint_64>(TransactionIdAttr)
                  //.addAttribute(objydata::LogicalType.DateTime, "time")
-                 .addAttribute<objydata::Utf8String>("hash")
-                 .addAttribute("block", blockRefSpec)
-                 .addAttribute("inputs", inputsSpec)
-                 .addAttribute("outputs", outputsSpec)
+                 .addAttribute<objydata::ByteString /*Utf8String*/>(TransactionHashAttr)
+                 .addAttribute(TransactionBlockAttr, blockRefSpec)
+                 .addAttribute(TransactionInputsAttr, inputsSpec)
+                 .addAttribute(TransactionOutputsAttr, outputsSpec)
                  .build();
   
   // -------------------
@@ -144,11 +154,11 @@ bool ObjyAccess::createSchema()
   objydata::Class inputClass = 
                  objydata::ClassBuilder(InputClassName)
                  .setSuperclass("ooObj")
-                 .addAttribute<objy::uint_64>("id")
-                 .addAttribute("transaction", transactionRefSpec)
-                 .addAttribute<objydata::Utf8String>("upTxHash")
-                 .addAttribute("upTx", transactionRefSpec)
-                 .addAttribute<bool>("isCoinBase")
+                 .addAttribute<objy::uint_64>(InputIdAttr)
+                 .addAttribute(InputTransactionAttr, transactionRefSpec)
+                 .addAttribute<objydata::ByteString /*Utf8String*/>(InputUpTxHashAttr)
+                 .addAttribute(InputUpTxAttr, transactionRefSpec)
+                 .addAttribute<bool>(InputIsCoinBaseAttr)
                  .build();
 
   // -------------------
@@ -157,8 +167,8 @@ bool ObjyAccess::createSchema()
   objydata::Class addressClass = 
                  objydata::ClassBuilder(AddressClassName)
                  .setSuperclass("ooObj")
-                 .addAttribute<objydata::Utf8String>("hash")
-                 .addAttribute("outputs", outputsSpec)
+                 .addAttribute<objydata::ByteString/*Utf8String*/>(AddressHashAttr)
+                 .addAttribute(AddressOutputsAttr, outputsForAddressSpec)
                  .build();
   
   // -------------------
@@ -167,11 +177,11 @@ bool ObjyAccess::createSchema()
   objydata::Class outputClass = 
                  objydata::ClassBuilder(OutputClassName)
                  .setSuperclass("ooObj")
-                 .addAttribute<objy::uint_64>("id")
-                 .addAttribute("transaction", transactionRefSpec)
-                 .addAttribute<objydata::Utf8String>("addressHash")
-                 .addAttribute("address", addressRefSpec)
-                 .addAttribute<objy::uint_64>("value")
+                 .addAttribute<objy::uint_64>(OutputIdAttr)
+                 .addAttribute(OutputTransactionAttr, transactionRefSpec)
+                 .addAttribute<objydata::ByteString/*Utf8String*/>(OutputAddressHashAttr)
+                 .addAttribute(OutputAddressAttr, addressRefSpec)
+                 .addAttribute<objy::uint_64>(OutputValueAttr)
                  .build();
   
   
@@ -193,42 +203,42 @@ bool ObjyAccess::setupCache()
 {
   // cache classes.
   blockClass.classRef = objydata::lookupClass(BlockClassName);
-  blockClass.idAttr = blockClass.classRef.lookupAttribute("id");
-  blockClass.versionAttr = blockClass.classRef.lookupAttribute("version");
-  blockClass.timeAttr = blockClass.classRef.lookupAttribute("time"); 
-  blockClass.hashAttr = blockClass.classRef.lookupAttribute("hash");
-  blockClass.prevBlockHashAttr = blockClass.classRef.lookupAttribute("prevBlockHash");
-  blockClass.merkleRootHashAttr = blockClass.classRef.lookupAttribute("merkleRootHash");
-  blockClass.prevBlockAttr = blockClass.classRef.lookupAttribute("prevBlock");
-  blockClass.nextBlockAttr = blockClass.classRef.lookupAttribute("nextBlock");
-  blockClass.transactionsAttr = blockClass.classRef.lookupAttribute("transactions");
+  blockClass.idAttr = blockClass.classRef.lookupAttribute(BlockIdAttr);
+  blockClass.versionAttr = blockClass.classRef.lookupAttribute(BlockVersionAttr);
+  blockClass.timeAttr = blockClass.classRef.lookupAttribute(BlockTimeAttr); 
+  blockClass.hashAttr = blockClass.classRef.lookupAttribute(BlockHashAttr);
+  blockClass.prevBlockHashAttr = blockClass.classRef.lookupAttribute(BlockPrevBlockHashAttr);
+  blockClass.merkleRootHashAttr = blockClass.classRef.lookupAttribute(BlockMerkleRootHashAttr);
+  blockClass.prevBlockAttr = blockClass.classRef.lookupAttribute(BlockPrevBlockAttr);
+  blockClass.nextBlockAttr = blockClass.classRef.lookupAttribute(BlockNextBlockAttr);
+  blockClass.transactionsAttr = blockClass.classRef.lookupAttribute(BlockTransactionsAttr);
   
 
   transactionClass.classRef = objydata::lookupClass(TransactionClassName);
-  transactionClass.idAttr = transactionClass.classRef.lookupAttribute("id");
-  transactionClass.hashAttr = transactionClass.classRef.lookupAttribute("hash");
-  transactionClass.blockAttr = transactionClass.classRef.lookupAttribute("block");
-  transactionClass.inputsAttr = transactionClass.classRef.lookupAttribute("inputs");
-  transactionClass.outputsAttr = transactionClass.classRef.lookupAttribute("outputs");
+  transactionClass.idAttr = transactionClass.classRef.lookupAttribute(TransactionIdAttr);
+  transactionClass.hashAttr = transactionClass.classRef.lookupAttribute(TransactionHashAttr);
+  transactionClass.blockAttr = transactionClass.classRef.lookupAttribute(TransactionBlockAttr);
+  transactionClass.inputsAttr = transactionClass.classRef.lookupAttribute(TransactionInputsAttr);
+  transactionClass.outputsAttr = transactionClass.classRef.lookupAttribute(TransactionOutputsAttr);
     
   inputClass.classRef = objydata::lookupClass(InputClassName);
-  inputClass.idAttr = inputClass.classRef.lookupAttribute("id");
-  inputClass.isCoinBaseAttr = inputClass.classRef.lookupAttribute("isCoinBase");
-  inputClass.upTxHashAttr = inputClass.classRef.lookupAttribute("upTxHash"); 
-  inputClass.upTxAttr = inputClass.classRef.lookupAttribute("upTx");
-  inputClass.transactionAttr = inputClass.classRef.lookupAttribute("transaction");
+  inputClass.idAttr = inputClass.classRef.lookupAttribute(InputIdAttr);
+  inputClass.isCoinBaseAttr = inputClass.classRef.lookupAttribute(InputIsCoinBaseAttr);
+  inputClass.upTxHashAttr = inputClass.classRef.lookupAttribute(InputUpTxHashAttr); 
+  inputClass.upTxAttr = inputClass.classRef.lookupAttribute(InputUpTxAttr);
+  inputClass.transactionAttr = inputClass.classRef.lookupAttribute(InputTransactionAttr);
   
     
   outputClass.classRef = objydata::lookupClass(OutputClassName);
-  outputClass.idAttr = outputClass.classRef.lookupAttribute("id");
-  outputClass.valueAttr = outputClass.classRef.lookupAttribute("value");
-  outputClass.addressHashAttr = outputClass.classRef.lookupAttribute("addressHash"); 
-  outputClass.addressAttr = outputClass.classRef.lookupAttribute("address");
-  outputClass.transactionAttr = outputClass.classRef.lookupAttribute("transaction");
+  outputClass.idAttr = outputClass.classRef.lookupAttribute(OutputIdAttr);
+  outputClass.valueAttr = outputClass.classRef.lookupAttribute(OutputValueAttr);
+  outputClass.addressHashAttr = outputClass.classRef.lookupAttribute(OutputAddressHashAttr); 
+  outputClass.addressAttr = outputClass.classRef.lookupAttribute(OutputAddressAttr);
+  outputClass.transactionAttr = outputClass.classRef.lookupAttribute(OutputTransactionAttr);
     
   addressClass.classRef = objydata::lookupClass(AddressClassName);
-  addressClass.hashAttr = addressClass.classRef.lookupAttribute("hash");
-  addressClass.outputsAttr = addressClass.classRef.lookupAttribute("outputs");
+  addressClass.hashAttr = addressClass.classRef.lookupAttribute(AddressHashAttr);
+  addressClass.outputsAttr = addressClass.classRef.lookupAttribute(AddressOutputsAttr);
   
   return true;
 }
