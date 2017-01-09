@@ -10,6 +10,7 @@
 #include <callback.h>
 
 #include <ooObjy.h>
+#include <objy/Configuration.h>
 #include <objy/db/Connection.h>
 #include <objy/db/Transaction.h>
 #include <objy/db/TransactionScope.h>
@@ -20,6 +21,7 @@
 
 namespace objydb = objy::db;
 namespace objydata = objy::data;
+namespace objyconfig = objy::configuration;
 
 
 static uint8_t empty[kSHA256ByteSize] = { 0x42 };
@@ -112,11 +114,14 @@ struct ObjyDump : public Callback {
         ooObjy::setLoggingOptions(oocLogAll, true, false, "../logs");
         ooObjy::startup();
         
+        objyconfig::ConfigurationManager* cfgMgr = objyconfig::ConfigurationManager::getInstance();
+        cfgMgr->enableConfiguration(true, 0, 0, 0, 0);
+        
         //connection = ooObjy::getConnection(bootfile);
 		connection = objydb::Connection::connect(fdname.c_str());
    
         try {
-          trx = new objydb::Transaction(objydb::OpenMode::Update);
+          trx = new objydb::Transaction(objydb::OpenMode::Update, "write_session");
           // create schema 
           bool bRet = objyAccess.createSchema();
           
@@ -213,7 +218,7 @@ struct ObjyDump : public Callback {
         currentBlock = objyAccess.createBlock(blkID, version, bufPrevBlockHash, 
                 bufBlockMerkleRoot, blkTime, bufBlockHash, previousBlock);
         
-        if(0==(b->height)%1000) {
+        if(0==(b->height)%100) {
             fprintf(
                 stderr,
                 "block=%8" PRIu64 " "
