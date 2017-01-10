@@ -30,9 +30,9 @@ static uint8_t emptyAddressKey[kRIPEMD160ByteSize] = { 0x52 };
 
 typedef GoogMap<Hash256, uint64_t, Hash256Hasher, Hash256Equal>::Map OutputMap;
 
-typedef GoogMap<Hash256, objydata::Reference, Hash256Hasher, Hash256Equal>::Map TrxMap;
+typedef GoogMap<Hash256, ooId, Hash256Hasher, Hash256Equal>::Map TrxMap;
 
-typedef GoogMap<Hash160, objydata::Reference, Hash160Hasher, Hash160Equal>::Map AddrMap;
+typedef GoogMap<Hash160, ooId, Hash160Hasher, Hash160Equal>::Map AddrMap;
 
 
 
@@ -112,7 +112,7 @@ struct ObjyDump : public Callback {
         // TBD... boot file is hard coded for now, will be params later
         fdname = "../data/bitcoin.boot";
         ooObjy::setLoggingOptions(oocLogAll, true, false, "../logs");
-        ooObjy::startup();
+        ooObjy::startup(255);
         
         objyconfig::ConfigurationManager* cfgMgr = objyconfig::ConfigurationManager::getInstance();
         cfgMgr->enableConfiguration(true, 0, 0, 0, 0);
@@ -218,7 +218,7 @@ struct ObjyDump : public Callback {
         currentBlock = objyAccess.createBlock(blkID, version, bufPrevBlockHash, 
                 bufBlockMerkleRoot, blkTime, bufBlockHash, previousBlock);
         
-        if(0==(b->height)%100) {
+        if(0==(b->height)%500) {
             fprintf(
                 stderr,
                 "block=%8" PRIu64 " "
@@ -228,6 +228,10 @@ struct ObjyDump : public Callback {
             );
             trx->commit();
             trx->start(objydb::OpenMode::Update);
+//            if (0==(b->height)%5000) {
+//              trx->abort();
+//              trx->start(objydb::OpenMode::Update);
+//            }
             
             //enoughProcessing = true;
         }
@@ -261,7 +265,7 @@ struct ObjyDump : public Callback {
         memcpy(key, hash, kSHA256ByteSize);
         
         currentTransaction = objyAccess.createTransaction(txID, buf);
-        trxMap[key] = currentTransaction;
+        trxMap[key] = objydata::oidFor(currentTransaction);
         
         objyAccess.addTransactionToBlock(currentTransaction, currentBlock);
 
@@ -336,7 +340,7 @@ struct ObjyDump : public Callback {
                 bufUpTxHash,
                 (uint64_t)upOutputIndex,
                 isCoinBase);
-        objydata::Reference upTrxRef;
+        ooId upTrxRef;
         
         if (!isCoinBase)
         {
@@ -407,11 +411,11 @@ struct ObjyDump : public Callback {
              // add it to the map
               uint8_t *key = allocHash160();
               memcpy(key, pubKeyHash.v, kRIPEMD160ByteSize);
-              addrMap[key] = addressRef;
+              addrMap[key] = objydata::oidFor(addressRef);
            }
            else 
            {
-             addressRef = val->second;
+             addressRef = objydata::referenceFor(val->second);
            }
         }
 

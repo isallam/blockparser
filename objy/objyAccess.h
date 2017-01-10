@@ -93,7 +93,7 @@ public:
         long blkTime, uint8_t* hash, objydata::Reference& prevBlock);
   objydata::Reference createTransaction(int id, uint8_t* hash);
   objydata::Reference createInput(
-          int id, uint8_t* upTxHash, objydata::Reference& upTrxRef, bool isCoinBase);
+          int id, uint8_t* upTxHash, ooId& upTrxRef, bool isCoinBase);
   objydata::Reference createOutput(int id, 
           uint8_t* address, objydata::Reference& addressRef, uint64_t trxValue);
   objydata::Reference createAddress(uint8_t* hash);

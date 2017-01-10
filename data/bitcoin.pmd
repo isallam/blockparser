@@ -33,8 +33,7 @@
     <IndexSpecifications/>
     <DatabasePlacers/>
     <ContainerPlacers>
-      <ContainerPlacer
-        name="Default"
+      <ContainerPlacer name="Default"
         description="Default placer used for placing containers when no specific container placer is specified"
         placeInto="OwnScope">
         <Scope>
@@ -42,6 +41,17 @@
           <DatabaseGroupConfiguration selection="Any">
             <DatabaseConfiguration
               databasePageSize="16384"
+							fileSizeLimit="400000k"/>
+          </DatabaseGroupConfiguration>
+        </Scope>
+      </ContainerPlacer>
+      <ContainerPlacer name="AddressContainerPlacer"
+        description="Placer for Address  containers" placeInto="OwnScope">
+        <Scope>
+          <SingleDatabaseGroup />
+          <DatabaseGroupConfiguration selection="Any">
+            <DatabaseConfiguration
+              databasePageSize="0"
 							fileSizeLimit="200000k"/>
           </DatabaseGroupConfiguration>
         </Scope>
@@ -59,7 +69,7 @@
           <ContainerGroupConfiguration selection="Any">
             <ContainerConfiguration
               growByPolicy="PercentageOfCurrentSize" growBy="100"
-              initialNumberOfPages="0" pageLimit="50000"
+              initialNumberOfPages="100" pageLimit="20000"
               placeInOwnFile="false"
               maintainObjectCounts="true">
 							<ObjectCountLimit objectClass="Block" objectLimit="20000" containerIsFullAtLimit="false"/>
@@ -67,7 +77,27 @@
           </ContainerGroupConfiguration>
         </Scope>
       </ObjectPlacer>
+      <ObjectPlacer name="AddressObjectPlacer"
+        description="Places Address objects in it's own databases" placeInto="OwnScope"
+        placeOnNewPage="false"
+        containerPlacer="AddressContainerPlacer">
+        <Scope>
+          <SingleContainerGroup />
+          <ContainerGroupConfiguration selection="Any">
+            <ContainerConfiguration 
+							growByPolicy="PercentageOfCurrentSize" growBy="100" 
+							initialNumberOfPages="100" pageLimit="20000"
+              placeInOwnFile="false" 
+							maintainObjectCounts="true">
+              <ObjectCountLimit objectClass="Address" objectLimit="0" containerIsFullAtLimit="false" />
+            </ContainerConfiguration>
+          </ContainerGroupConfiguration>
+        </Scope>
+      </ObjectPlacer>
+
     </ObjectPlacers>
-    <Rules/>
+    <Rules>
+      <Rule objectClass="Address" objectPlacer="AddressObjectPlacer" />
+  	</Rules>
   </PlacementModel>
 </PMD>

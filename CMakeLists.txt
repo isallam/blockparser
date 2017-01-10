@@ -1,7 +1,15 @@
 cmake_minimum_required (VERSION 2.8)
 project (blockparser)
 
-set(CMAKE_BUILD_TYPE Release)
+message("CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
+
+IF(CMAKE_BUILD_TYPE MATCHES Debug)
+  message("Debug build.")
+ELSE()
+  set(CMAKE_BUILD_TYPE Release)
+  message("Release build.")
+ENDIF()
+
 #set(CMAKE_CXX_FLAGS "-std=c++11") 
 #set(CMAKE_CXX_FLAGS " -O6 -g0  -m64 -Wall -flto -msse3 -Wextra -Wformat -pedantic -std=c++11 -ffast-math -march=native -fno-check-new -funroll-loops -Wno-deprecated -falign-loops=16 -Wformat-security -fstrict-aliasing -Wstrict-aliasing=2 -Wno-strict-overflow -Wno-unused-variable -Wno-variadic-macros -fomit-frame-pointer -Wno-unused-parameter -finline-limit=1000000 -Wno-unused-private-field -Wno-unused-local-typedefs")
 

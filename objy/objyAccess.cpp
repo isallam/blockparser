@@ -336,7 +336,7 @@ objydata::Reference ObjyAccess::createTransaction(
  */
 objydata::Reference ObjyAccess::createInput(
         int id, uint8_t* upTxHash, 
-        objydata::Reference& upTrxRef, bool isCoinBase)
+        ooId& upTrxRef, bool isCoinBase)
 {
   objydata::Object object = objydata::createPersistentObject(inputClass.classRef);
 
@@ -351,10 +351,10 @@ objydata::Reference ObjyAccess::createInput(
   object.attributeValue(inputClass.upTxHashAttr, inputClass.value);
   inputClass.value.set(inputClass.stringValue);
   
-  if (!isCoinBase && upTrxRef)
+  if (!isCoinBase/* && !upTrxRef*/)
   {
     object.attributeValue(inputClass.upTxAttr, inputClass.value);
-    inputClass.value.set(upTrxRef);
+    inputClass.value.set<objydata::Reference>(objydata::referenceFor(upTrxRef));
   }
 
   return objydata::createReference(object);
