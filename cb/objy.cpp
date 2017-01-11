@@ -11,6 +11,7 @@
 
 #include <ooObjy.h>
 #include <objy/Configuration.h>
+#include <objy/Tools.h>
 #include <objy/db/Connection.h>
 #include <objy/db/Transaction.h>
 #include <objy/db/TransactionScope.h>
@@ -112,7 +113,7 @@ struct ObjyDump : public Callback {
         // TBD... boot file is hard coded for now, will be params later
         fdname = "../data/bitcoin.boot";
         ooObjy::setLoggingOptions(oocLogAll, true, false, "../logs");
-        ooObjy::startup(255);
+        ooObjy::startup(24);
         
         objyconfig::ConfigurationManager* cfgMgr = objyconfig::ConfigurationManager::getInstance();
         cfgMgr->enableConfiguration(true, 0, 0, 0, 0);
@@ -126,6 +127,13 @@ struct ObjyDump : public Callback {
           bool bRet = objyAccess.createSchema();
           
           trx->commit();
+	  // importPlacement
+          objy::tool::ToolParameters params;
+          params.add("infile", "../data/bitcoin.pmd");
+          params.add("bootfile", fdname.c_str());
+
+          objy::tool::StringToolOutputSink sink;
+          objy::tool::Tool::execute("importPlacement", params, &sink);
         } 
         catch (ooKernelException& e)
         {
@@ -217,8 +225,14 @@ struct ObjyDump : public Callback {
         
         currentBlock = objyAccess.createBlock(blkID, version, bufPrevBlockHash, 
                 bufBlockMerkleRoot, blkTime, bufBlockHash, previousBlock);
-        
-        if(0==(b->height)%500) {
+      
+        int commitEvery = 1000; 
+	if (b->height > 100000)
+            commitEvery = 500; 
+	if (b->height > 200000)
+            commitEvery = 100; 
+	
+        if(0==(b->height)%commitEvery) {
             fprintf(
                 stderr,
                 "block=%8" PRIu64 " "
@@ -228,10 +242,10 @@ struct ObjyDump : public Callback {
             );
             trx->commit();
             trx->start(objydb::OpenMode::Update);
-//            if (0==(b->height)%5000) {
+//            if (0==(b->height)%2000) {
 //              trx->abort();
-//              trx->start(objydb::OpenMode::Update);
-//            }
+////              trx->start(objydb::OpenMode::Update);
+////            }
             
             //enoughProcessing = true;
         }

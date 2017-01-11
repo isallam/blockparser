@@ -61,7 +61,7 @@ bool ObjyAccess::createSchema()
   objydata::DataSpecificationHandle transactionsSpec = 
           objydata::DataSpecificationBuilder<objydata::LogicalType::List>()
           .setElementSpecification(transactionRefSpec)
-          //.setCollectionName("SegmentedArray")
+          .setCollectionName("SegmentedArray")
           .build();
 
   // input reference
@@ -74,7 +74,7 @@ bool ObjyAccess::createSchema()
   objydata::DataSpecificationHandle inputsSpec = 
           objydata::DataSpecificationBuilder<objydata::LogicalType::List>()
           .setElementSpecification(inputsRefSpec)
-          //.setCollectionName("SegmentedArray")
+          .setCollectionName("SegmentedArray")
           .build();
   
   // Output reference
@@ -87,7 +87,7 @@ bool ObjyAccess::createSchema()
   objydata::DataSpecificationHandle outputsSpec = 
           objydata::DataSpecificationBuilder<objydata::LogicalType::List>()
           .setElementSpecification(outputRefSpec)
-          //.setCollectionName("SegmentedArray")
+          .setCollectionName("SegmentedArray")
           .build();
 
   
@@ -95,7 +95,7 @@ bool ObjyAccess::createSchema()
   objydata::DataSpecificationHandle outputsForAddressSpec = 
           objydata::DataSpecificationBuilder<objydata::LogicalType::List>()
           .setElementSpecification(outputRefSpec)
-          //.setCollectionName("SegmentedArray")
+          .setCollectionName("SegmentedArray")
           .build();
   
   // Address reference
