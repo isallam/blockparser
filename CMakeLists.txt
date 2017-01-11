@@ -40,7 +40,10 @@ SET(SYSTEM_LIBS crypto dl)
 SET(OBJYLIBS oo.12.3 ooSessionManager.12.3 ooConfiguration.12.3 ooObjectModel.12.3 ooData.12.3 ooUtil.12.3 ooError.12.3 ooTool.12.3)
 
 add_executable(blockparser ${SOURCES} parser.cpp)
-add_executable(tst ${SOURCES} ${TEST_SOURCES} test.cpp tst.cpp)
+#add_executable(tst ${SOURCES} ${TEST_SOURCES} test.cpp tst.cpp)
+add_executable(objysetup ${SOURCES} ${TEST_SOURCES} test.cpp objysetup.cpp)
+
 
 target_link_libraries(blockparser LINK_PUBLIC ${SYSTEM_LIBS} ${OBJYLIBS})
-target_link_libraries(tst LINK_PUBLIC ${SYSTEM_LIBS} ${OBJYLIBS})
+#target_link_libraries(tst LINK_PUBLIC ${SYSTEM_LIBS} ${OBJYLIBS})
+target_link_libraries(objysetup LINK_PUBLIC ${SYSTEM_LIBS} ${OBJYLIBS})
