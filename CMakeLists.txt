@@ -20,7 +20,9 @@ ADD_DEFINITIONS(-DBITCOIN)
 ADD_DEFINITIONS(-DWANT_DENSE)
 ADD_DEFINITIONS(-D__STDC_FORMAT_MACROS=1)
 
-include_directories(. /opt/Objectivity/12.3/include)
+SET(OBJY_VERSION 12.4)
+
+include_directories(. /opt/Objectivity/${OBJY_VERSION}/include)
  
 SET(SOURCES callback.cpp opcodes.cpp option.cpp rmd160.cpp sha256.cpp timer.cpp util.cpp)
 
@@ -33,11 +35,11 @@ add_subdirectory (objy)
 
 set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_CXX_FLAGS})
 
-#set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /opt/Objectivity/12.3/lib)
-link_directories(/opt/Objectivity/12.3/lib)
+#set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /opt/Objectivity/12.4/lib)
+link_directories(/opt/Objectivity/${OBJY_VERSION}/lib)
 
 SET(SYSTEM_LIBS crypto dl)
-SET(OBJYLIBS oo.12.3 ooSessionManager.12.3 ooConfiguration.12.3 ooObjectModel.12.3 ooData.12.3 ooUtil.12.3 ooError.12.3 ooTool.12.3)
+SET(OBJYLIBS oo.${OBJY_VERSION} ooSessionManager.${OBJY_VERSION} ooConfiguration.${OBJY_VERSION} ooObjectModel.${OBJY_VERSION} ooData.${OBJY_VERSION} ooUtil.${OBJY_VERSION} ooError.${OBJY_VERSION} ooTool.${OBJY_VERSION})
 
 add_executable(blockparser ${SOURCES} parser.cpp)
 #add_executable(tst ${SOURCES} ${TEST_SOURCES} test.cpp tst.cpp)
