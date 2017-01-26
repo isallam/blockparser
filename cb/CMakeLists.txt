@@ -11,7 +11,7 @@ set(SOURCES
 		${CMAKE_CURRENT_SOURCE_DIR}/rewards.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/sql.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/transactions.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/closure.cpp
+#		${CMAKE_CURRENT_SOURCE_DIR}/closure.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/headers.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/objy.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/rawdump.cpp
