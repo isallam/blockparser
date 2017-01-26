@@ -122,7 +122,6 @@ struct KafkaDump : public Callback {
       
         if(1 <= endBlockId && endBlockId < blkID) {
             enoughProcessing = true;
-            //wrapup();
             return;
         }
 
