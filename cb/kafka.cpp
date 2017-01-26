@@ -21,7 +21,9 @@ struct KafkaDump : public Callback {
     uint64_t inputID;
     uint64_t outputID;
     
-    int64_t cutoffBlock;
+    uint64_t beginBlockId;
+    uint64_t endBlockId;
+    bool doProcessing;
     
     optparse::OptionParser parser;
     
@@ -40,11 +42,18 @@ struct KafkaDump : public Callback {
             .epilog("")
         ;
         parser
-            .add_option("-a", "--atBlock")
+            .add_option("-b", "--beginBlock")
+            .action("store")
+            .type("int")
+            .set_default(0)
+            .help("begin processing at block <block> (default: 0)")
+        ;
+        parser
+            .add_option("-e", "--endBlock")
             .action("store")
             .type("int")
             .set_default(-1)
-            .help("stop dump at block <block> (default: all)")
+            .help("end processing at block <block> (default: 0)")
         ;
     }
 
@@ -79,8 +88,11 @@ struct KafkaDump : public Callback {
         //addrMap.resize(sz);
 
         optparse::Values &values = parser.parse_args(argc, argv);
-        cutoffBlock = values.get("atBlock").asInt64();
-
+        beginBlockId = values.get("beginBlock").asInt64();
+        endBlockId = values.get("endBlock").asInt64();
+        
+        doProcessing = false;
+        
         info("dumping the blockchain ...");
 
         objySimFile = fopen("objySimFile.txt", "w");
@@ -92,16 +104,26 @@ struct KafkaDump : public Callback {
         
         return 0;
     }
-
+    
     virtual void startBlock(
         const Block *b,
         uint64_t
     ) {
       
+        blkID = b->height-1;
+
+        if (!doProcessing && blkID >= beginBlockId)
+          doProcessing = true;
+      
+        if (!doProcessing)
+          return;
+      
         kafkaUtil.startBatch();
       
-        if(0<=cutoffBlock && cutoffBlock<b->height) {
-            wrapup();
+        if(1 <= endBlockId && endBlockId < blkID) {
+            enoughProcessing = true;
+            //wrapup();
+            return;
         }
 
         const uint8_t * p = b->chunk->getData();
@@ -121,7 +143,6 @@ struct KafkaDump : public Callback {
         toHex(bufPrevBlockHash, prevBlkHash.v);
         toHex(bufBlockMerkleRoot, blkMerkleRoot.v);
 
-        blkID = b->height-1;
 
 //        currentBlock = objyAccess.createBlock(blkID, version, bufPrevBlockHash, 
 //                bufBlockMerkleRoot, blkTime, bufBlockHash, previousBlock);
@@ -146,7 +167,11 @@ struct KafkaDump : public Callback {
     virtual void endBlock(
         const Block *b
     ) {
-      kafkaUtil.endBatch();
+       
+        if (!doProcessing)
+          return;
+
+        kafkaUtil.endBatch();
 //      fprintf(objySimFile,
 //        " BLOCK(%s)\n\n",
 //        kafkaUtil.getBatchAsJson());
@@ -160,6 +185,9 @@ struct KafkaDump : public Callback {
         const uint8_t *p,
         const uint8_t *hash
     ) {
+      
+        if (!doProcessing)
+          return;
         // id BIGINT PRIMARY KEY
         // hash BINARY(32)
         // blockID BIGINT
@@ -188,6 +216,10 @@ struct KafkaDump : public Callback {
     virtual void endTX(
         const uint8_t *p
     ) {
+      
+        if (!doProcessing)
+          return;
+
         LOAD(uint32_t, lockTime, p);
         if (dumpToFiles)
           fprintf(objySimFile, 
@@ -198,6 +230,10 @@ struct KafkaDump : public Callback {
     virtual void startInputs(
         const uint8_t *p
     ) {
+      
+        if (!doProcessing)
+          return;
+
         inputID = 0;
         //isCoinBase = false;
     }
@@ -206,6 +242,10 @@ struct KafkaDump : public Callback {
     virtual void startInput(
         const uint8_t *p
     ) {
+      
+        if (!doProcessing)
+          return;
+
         static uint256_t gNullHash;
         LOAD(uint256_t, upTXHash, p);
         LOAD(uint32_t, upOutputIndex, p);
@@ -274,6 +314,9 @@ struct KafkaDump : public Callback {
         const uint8_t *outputScript,
         uint64_t      outputScriptSize
     ) {
+      
+        if (!doProcessing)
+          return;
         uint8_t address[40];
         address[0] = 'X';
         address[1] = 0;
