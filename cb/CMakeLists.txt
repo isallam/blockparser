@@ -14,6 +14,10 @@ set(SOURCES
 		${CMAKE_CURRENT_SOURCE_DIR}/closure.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/headers.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/objy.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/kafka.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/KafkaUtil.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/kafka2.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/KafkaUtil2.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/rawdump.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/simpleStats.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/taint.cpp
