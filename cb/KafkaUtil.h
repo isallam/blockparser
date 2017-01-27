@@ -14,49 +14,64 @@
 #ifndef KAFKAUTIL_H
 #define KAFKAUTIL_H
 
+#include <iostream>
+#include <string>
+#include <functional>
+#include <vector>
+
 #include <util.h>
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/document.h"
-#include <iostream>
 
 using namespace rapidjson;
 
 const int SizeOfAddress = 40;
 const int SizeOfHash = 2 * kSHA256ByteSize; 
 
+struct DataElement {
+  StringBuffer buffer;
+  std::string key;  
+};
+
+struct EdgeElement {
+  StringBuffer buffer;
+  // there is no "key" for edgeElement.
+};
+
+struct Batch {
+  std::vector<std::string> tripleList;
+  std::vector<std::string> keyList;
+ 
+  void clear() {
+    tripleList.clear();
+    keyList.clear();
+  };
+
+  int size() {
+    return tripleList.size();
+  };
+  
+  void add(const DataElement& tripleElement)
+  {
+    tripleList.push_back(tripleElement.buffer.GetString());
+    keyList.push_back(tripleElement.key);
+  };
+};
+
+typedef std::vector<Batch> BatchList;
+typedef std::vector<Batch>::iterator BatchListItr;
+
+
 class KafkaUtil {
-
-  // just for information until we write the API to generate the 
-  // correct batch
-     const char* tripleJson = "{ \
-                        \"from\": {}, \
-                        \"to\":{}, \
-                        \"connectionMessage\":{}, \
-                        \"attribute\":\"\", \
-                        \"inverseAttribute\":\"\" \
-                        }";
-
-    const char* tripleBatchJson = "{ \
-                    \"tripleMessages\": [], \
-                    \"keys\":[] \
-                  }";
-
 
 public:
   KafkaUtil();
+  
   KafkaUtil(const KafkaUtil& orig);
   virtual ~KafkaUtil();
   
-  void init();
-
-  const char* getBlockAsJson() { return blockStrBuf.GetString(); }
-  const char* getTransactionAsJson() { return transactionStrBuf.GetString(); }
-  const char* getInputAsJson() { return inputStrBuf.GetString(); }
-  const char* getOutputAsJson() { return outputStrBuf.GetString(); }
-  const char* getAddressAsJson() { return addressStrBuf.GetString(); }
-  const char* getPrevBlockAsJson() { return prevBlockStrBuf.GetString(); }
-  const char* getUpTxAsJson() { return upTxStrBuf.GetString(); }
+  void init(int numPipelines = 16, int maxBatchSize = 10);
 
   void blockToJson(int id, int version, uint8_t* prevBlockHash, 
           uint8_t* blockMerkleRoot, long blkTime, uint8_t* hash);
@@ -67,45 +82,68 @@ public:
   void addressToJson(uint8_t* hash);
   void upTxToJson(int id,  uint8_t* hash);
 
-  void startBatch();
-  void endBatch();
-  const char* getBatchAsJson() { return batchStrBuf.GetString(); }
+  //const char* getBatchAsJson() { return batchStrBuf.GetString(); }
 
-  void submitTriple(const char* from , 
-          const char* to, const char* attribute, const char* inverseAttribute);
+ 
+  DataElement& getBlockElement() { return blockElement; }
+  DataElement& getTransactionElement() { return transactionElement; }
+  EdgeElement& getInputElement() { return inputElement; }
+  EdgeElement& getOutputElement() { return outputElement; }
+  DataElement& getAddressElement() { return addressElement; }
+  DataElement& getPrevBlockElement() { return prevBlockElement; }
+  DataElement& getUpTxElement() { return upTxElement; }
+ 
+  void submitTriple(
+          const DataElement& from , const DataElement& to, 
+          const char* attribute, const char* inverseAttribute);
 
+  void submitTriple(
+          const DataElement& from , const EdgeElement& edge, const DataElement& to, 
+          const char* attribute, const char* inverseAttribute);
+
+  void submitTriple(
+          const DataElement& from , const EdgeElement& edge, 
+          const char* attribute);
   //void saveBlockAsPrevious();
 
 private:
-  void addTripleToBatch();
-  void createTriple(const char* from , 
-          const char* to, const char* attribute, const char* inverseAttribute);
+  void addTripleToBatch(int partition, const DataElement& tripleElement);
+  const DataElement& constructTriple(
+                        const DataElement& from , const EdgeElement& edge, 
+                        const DataElement& to, 
+                        const char* attribute, const char* inverseAttribute);
 
+  void submitBatch(int partition, const Batch& batch);
 
   
 private:
-    //char prevBlockStrBuf[1024];
-    StringBuffer blockStrBuf;
-    StringBuffer transactionStrBuf;
-    Document transactionDoc;
-    StringBuffer inputStrBuf;
-    Document inputDoc;
-    StringBuffer outputStrBuf;
-    StringBuffer addressStrBuf;
+    DataElement blockElement;
+    DataElement transactionElement;
+    EdgeElement inputElement;
+    EdgeElement outputElement;
+    DataElement addressElement;
     
-    StringBuffer prevBlockStrBuf;
-    StringBuffer upTxStrBuf;  // used to represnet the UpTx for the input.
     
-    StringBuffer tripleStrBuf;
-    StringBuffer batchStrBuf;
-    StringBuffer keysStrBuf;
+    DataElement prevBlockElement;
+    DataElement upTxElement;  // used to represnet the UpTx for the input.
+    
+    DataElement tripleElement;
 
+    DataElement emptyDataElement;
+    EdgeElement emptyEdgeElement;
+    
+    //StringBuffer batchStrBuf;
+ 
     Writer<StringBuffer> writer;
     Writer<StringBuffer> blockWriter;
     Writer<StringBuffer> transactionWriter;
     Writer<StringBuffer> tripleWriter;
     Writer<StringBuffer> batchWriter;
+    
+    int numPartitions;
+    int maxBatchSize;
 
+    BatchList batchList;
 };
 
 #endif /* KAFKAUTIL_H */

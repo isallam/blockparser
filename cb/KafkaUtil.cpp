@@ -14,6 +14,8 @@
 #include "KafkaUtil.h"
 
 KafkaUtil::KafkaUtil() {
+    numPartitions = 16;
+    maxBatchSize = 1000;
 }
 
 KafkaUtil::KafkaUtil(const KafkaUtil& orig) {
@@ -22,48 +24,33 @@ KafkaUtil::KafkaUtil(const KafkaUtil& orig) {
 KafkaUtil::~KafkaUtil() {
 }
 
-void KafkaUtil::init() {
-  batchStrBuf.Clear();
-  //
-  const char* trxStr = "{\"className\":\"Transaction\","
-                       "\"oidAsLong\": 0, "
-                       "\"primaryFieldValue\":\"\", "
-                       "\"values\": { "
-                       "\"m_Id\": 0, \"m_Hash\":\"\" }"
-                       "}";
+void KafkaUtil::init(int numPartitions, int maxBatchSize) {
+  this->numPartitions = numPartitions;
+  this->maxBatchSize = maxBatchSize;
   
-  const char* inputStr = "{\"className\":\"Input\","
-                       "\"oidAsLong\": 0, "
-                       "\"primaryFieldValue\":\"\", "
-                       "\"values\": { "
-                       "\"m_Id\": 0, \"m_IsCoinBase\": true, \"m_UpTrxHash\":\"\" }"
-                       "}";
-//  const char* jsonStr = "{"
-//    "\"hello\": \"world\","
-//    "\"t\": true ,"
-//    "\"i\": 123,"
-//    "\"a\": [1, 2, 3, 4]"
-//    "}";
+  Batch* batch;
+  for (int i = 0; i < numPartitions; i++)
+  {
+    batch = new Batch;
+    batchList.push_back(*batch);
+  }
   
-  transactionDoc.Parse(trxStr);
-  inputDoc.Parse(inputStr);
+  // initialize the empty edge
+  emptyDataElement.buffer.Clear();
+  emptyEdgeElement.buffer.Clear();
+  writer.Reset(emptyDataElement.buffer); 
+  writer.StartObject();  writer.EndObject();
+  writer.Reset(emptyEdgeElement.buffer);
+  writer.StartObject();  writer.EndObject();
 
-//  StringBuffer buffer;
-//  Writer<StringBuffer> writer(buffer);
-//  inputDoc.Accept(writer);
-//  printf(">>>%s<<<\n\n", buffer.GetString());
-//  exit(0);
 }
 
-//void KafkaUtil::saveBlockAsPrevious() {
-//  strcpy(prevBlockStrBuf, blockStrBuf.GetString());
-//}
 
 void KafkaUtil::blockToJson(int id, int version, uint8_t* prevBlockHash, 
         uint8_t* merkleRootHash, long blkTime, uint8_t* hash)
 {
-  blockStrBuf.Clear();
-  blockWriter.Reset(blockStrBuf);
+  blockElement.buffer.Clear();
+  blockWriter.Reset(blockElement.buffer);
   blockWriter.StartObject();
   blockWriter.Key("className"); blockWriter.String("Block");
   blockWriter.Key("oidAsLong"); blockWriter.Uint(0);
@@ -77,18 +64,20 @@ void KafkaUtil::blockToJson(int id, int version, uint8_t* prevBlockHash,
     blockWriter.Key("m_MerkleRootHash"); blockWriter.String(reinterpret_cast<char*>(merkleRootHash), SizeOfHash);
     blockWriter.EndObject();
   blockWriter.EndObject();
+  blockElement.key = reinterpret_cast<char*>(hash);
 }
 
 void KafkaUtil::prevBlockToJson(uint8_t* hash)
 {
-  prevBlockStrBuf.Clear();
-  blockWriter.Reset(blockStrBuf);
+  prevBlockElement.buffer.Clear();
+  blockWriter.Reset(prevBlockElement.buffer);
   blockWriter.StartObject();
   blockWriter.Key("className"); blockWriter.String("Block");
   blockWriter.Key("oidAsLong"); blockWriter.Uint(0);
   blockWriter.Key("primaryFieldValue"); blockWriter.String(reinterpret_cast<char*>(hash), SizeOfHash);
   blockWriter.Key("values"); blockWriter.StartObject(); blockWriter.EndObject();
   blockWriter.EndObject();
+  prevBlockElement.key = reinterpret_cast<char*>(hash);
 }
 
 /**
@@ -99,8 +88,8 @@ void KafkaUtil::prevBlockToJson(uint8_t* hash)
  */
 void KafkaUtil::transactionToJson(int id, uint8_t* hash)
 {
-  transactionStrBuf.Clear();
-  transactionWriter.Reset(transactionStrBuf);
+  transactionElement.buffer.Clear();
+  transactionWriter.Reset(transactionElement.buffer);
   transactionWriter.StartObject();
   transactionWriter.Key("className"); transactionWriter.String("Transaction");
   transactionWriter.Key("oidAsLong"); transactionWriter.Uint(0);
@@ -110,23 +99,14 @@ void KafkaUtil::transactionToJson(int id, uint8_t* hash)
     transactionWriter.Key("m_Hash"); transactionWriter.String(reinterpret_cast<char*>(hash), SizeOfHash);
     transactionWriter.EndObject();
   transactionWriter.EndObject();
-
-//  Value& primeValue = transactionDoc["primaryFieldValue"];
-//  primeValue.SetString(StringRef(reinterpret_cast<char*>(hash), SizeOfHash));
-//  transactionDoc["values"]["m_Id"] = id;
-//  Value& hashValue = transactionDoc["values"]["m_Hash"];
-//  hashValue.SetString(StringRef(reinterpret_cast<char*>(hash), SizeOfHash/*, 
-//          transactionDoc.GetAllocator()*/));
-//
-//  transactionStrBuf.Clear();
-//  transactionWriter.Reset(transactionStrBuf);
-//  transactionDoc.Accept(transactionWriter);
+  transactionElement.key = reinterpret_cast<char*>(hash);
 }
 
 void KafkaUtil::upTxToJson(int id, uint8_t* hash)
 {
-  upTxStrBuf.Clear();
-  writer.Reset(upTxStrBuf);
+  upTxElement.buffer.Clear();
+  writer.Reset(upTxElement.buffer);
+  
   writer.StartObject();
   writer.Key("className"); writer.String("Transaction");
   writer.Key("oidAsLong"); writer.Uint(0);
@@ -136,6 +116,8 @@ void KafkaUtil::upTxToJson(int id, uint8_t* hash)
     writer.Key("m_Hash"); writer.String(reinterpret_cast<char*>(hash));
     writer.EndObject();
   writer.EndObject();
+  
+  upTxElement.key = reinterpret_cast<char*>(hash);
 }
 
 /**
@@ -148,27 +130,20 @@ void KafkaUtil::upTxToJson(int id, uint8_t* hash)
  */
 void KafkaUtil::inputToJson(int id, uint8_t* upTrxHash, bool isCoinBase)
 {
-  inputStrBuf.Clear();
-  writer.Reset(inputStrBuf);
+  inputElement.buffer.Clear();
+  writer.Reset(inputElement.buffer);
+  
   writer.StartObject();
   writer.Key("className"); writer.String("Input");
   writer.Key("oidAsLong"); writer.Uint(0);
-  writer.Key("primaryFieldValue"); writer.String("");
+  writer.Key("sourceAttributeName"); writer.String("m_Transaction");
+  writer.Key("targetAttributeName"); writer.String("m_UpTx");
   writer.Key("values"); writer.StartObject();
     writer.Key("m_Id"); writer.Uint(id);
     writer.Key("m_IsCoinBase"); writer.Bool(isCoinBase);
     writer.Key("m_UpTrxHash"); writer.String(reinterpret_cast<char*>(upTrxHash), SizeOfHash);
     writer.EndObject();
   writer.EndObject();
-//  inputDoc["values"]["m_Id"] = id;
-//  inputDoc["values"]["m_IsCoinBase"] = isCoinBase;
-//  Value& hashValue = inputDoc["values"]["m_UpTrxHash"];
-//  hashValue.SetString(StringRef(reinterpret_cast<char*>(upTrxHash), SizeOfHash/*, 
-//          transactionDoc.GetAllocator()*/));
-//
-//  inputStrBuf.Clear();
-//  writer.Reset(inputStrBuf);
-//  inputDoc.Accept(writer);
 }
 
 /**
@@ -181,18 +156,20 @@ void KafkaUtil::inputToJson(int id, uint8_t* upTrxHash, bool isCoinBase)
  */
 void KafkaUtil::outputToJson(int id, uint8_t* address, uint64_t trxValue)
 {
-  outputStrBuf.Clear();
-  writer.Reset(outputStrBuf);
+  outputElement.buffer.Clear();
+  writer.Reset(outputElement.buffer);
+  
   writer.StartObject();
   writer.Key("className"); writer.String("Output");
   writer.Key("oidAsLong"); writer.Uint(0);
-  writer.Key("primaryFieldValue"); writer.String("");
+  writer.Key("sourceAttributeName"); writer.String("m_Transaction");
+  writer.Key("targetAttributeName"); writer.String("m_Address");
   writer.Key("values"); writer.StartObject();
     writer.Key("m_Id"); writer.Uint(id);
     writer.Key("m_Value"); writer.Uint64(trxValue);
     writer.Key("m_AddressHash"); writer.String(reinterpret_cast<char*>(address), SizeOfAddress);
     writer.EndObject();
-  writer.EndObject();
+  writer.EndObject();  
 }
 
 /**
@@ -202,8 +179,9 @@ void KafkaUtil::outputToJson(int id, uint8_t* address, uint64_t trxValue)
  */
 void KafkaUtil::addressToJson(uint8_t* hash)
 {
-  addressStrBuf.Clear();
-  writer.Reset(addressStrBuf);
+  addressElement.buffer.Clear();
+  writer.Reset(addressElement.buffer);
+  
   writer.StartObject();
   writer.Key("className"); writer.String("Address");
   writer.Key("oidAsLong"); writer.Uint(0);
@@ -212,66 +190,107 @@ void KafkaUtil::addressToJson(uint8_t* hash)
     writer.Key("m_Hash"); writer.String(reinterpret_cast<char*>(hash), SizeOfAddress);
     writer.EndObject();
   writer.EndObject();
+  
+  addressElement.key = reinterpret_cast<char*>(hash);
 }
 
 
-void KafkaUtil::submitTriple(const char* from , const char* to, 
+void KafkaUtil::submitTriple(const DataElement& from, const EdgeElement& edge, 
+        const char* attribute)
+{
+  
+  return submitTriple(from, edge, emptyDataElement, attribute, "");
+}  
+
+void KafkaUtil::submitTriple(const DataElement& from, const DataElement& to, 
         const char* attribute, const char* inverseAttribute)
 {
-  // process message to kafka topic if size reaches max
-//     if(m_Triples.size() > m_MaxBatchCount)
-//     {
-//         sendMessages();
-//     }
-//     // Attempt to filter/process the triple message if enabled
-//     TripleMessage triple = new TripleMessage((InstanceMessage) from, attributeName, inverseAttributeName, (InstanceMessage) to);
+  
+  return submitTriple(from, emptyEdgeElement, to, attribute, inverseAttribute);
+  
+//    // Attempt to filter/process the triple message if enabled
+//    const DataElement& triple = constructTriple(from, to, attribute, inverseAttribute);
 //     
-//     if(enableFilter && m_TripleFilter.contains(triple))
-//     {
-//         m_FilterCount++;
-//     }
-//     else
-//     {
-//         String key = from.getPrimaryFieldValue();
-//         int partition = Math.abs(key.hashCode()) % m_PartitionCount;
-//         m_Triples.add(partition, key, triple);
-//     }
-  createTriple(from, to, attribute, inverseAttribute);
+//    int partition = std::hash<std::string>()(triple.key) % numPartitions;
+//    addTripleToBatch(partition, triple);
 }
 
-void KafkaUtil::createTriple(const char* from, const char* to, 
+void KafkaUtil::submitTriple(const DataElement& from, const EdgeElement& edge, 
+        const DataElement& to, 
         const char* attribute, const char* inverseAttribute)
 {
-    tripleStrBuf.Clear();
-    tripleWriter.Reset(tripleStrBuf);
+    // Attempt to filter/process the triple message if enabled
+    const DataElement& triple = constructTriple(from, edge, to, attribute, inverseAttribute);
+     
+    int partition = std::hash<std::string>()(triple.key) % numPartitions;
+    addTripleToBatch(partition, triple);
+}
+
+const DataElement& KafkaUtil::constructTriple(const DataElement& from, 
+        const EdgeElement& edge, const DataElement& to, 
+        const char* attribute, const char* inverseAttribute)
+{
+    tripleElement.buffer.Clear();
+    tripleWriter.Reset(tripleElement.buffer);
     tripleWriter.StartObject();
-    tripleWriter.Key("from"); tripleWriter.RawValue(from, strlen(from), kObjectType);
-    tripleWriter.Key("To"); tripleWriter.RawValue(to, strlen(to), kObjectType);
-    tripleWriter.Key("connectionMessage"); tripleWriter.StartObject(); tripleWriter.EndObject();
+    tripleWriter.Key("from"); 
+    tripleWriter.RawValue(from.buffer.GetString(), from.buffer.GetSize(), kObjectType);
+    tripleWriter.Key("To"); 
+    tripleWriter.RawValue(to.buffer.GetString(), to.buffer.GetSize(), kObjectType);
+    tripleWriter.Key("connectionMessage"); 
+    tripleWriter.RawValue(edge.buffer.GetString(), edge.buffer.GetSize(), kObjectType);
     tripleWriter.Key("attribute"); tripleWriter.String(attribute);
     tripleWriter.Key("inverseAttribute"); tripleWriter.String(inverseAttribute);
     tripleWriter.EndObject();
-    addTripleToBatch();
+    
+    if (from.key.empty())
+      printf("Empty Key for: %s\n", from.buffer.GetString());
+    tripleElement.key = from.key;
+    return tripleElement;
 }
 
-void KafkaUtil::startBatch()
+
+void KafkaUtil::addTripleToBatch(int partition, const DataElement& tripleElement)
 {
-  init();
+  Batch& batch = batchList[partition];
+  if (batch.size() >= maxBatchSize)
+  {
+    submitBatch(partition, batch);
+    batch.clear();
+  }
+  batch.add(tripleElement);
+}
+
+void KafkaUtil::submitBatch(int partition, const Batch& batch)
+{
+
+  StringBuffer batchStrBuf;
   batchWriter.Reset(batchStrBuf);
   batchWriter.StartObject();
   batchWriter.Key("tripleMessages");
   batchWriter.StartArray();
-}
-
-void KafkaUtil::endBatch()
-{
-  //batchWriter.Reset(batchStrBuf);
+    std::vector<std::string> triples = batch.tripleList;
+    std::vector<std::string>::iterator tripleItr = triples.begin();
+    while (tripleItr != triples.end())
+    {
+      batchWriter.RawValue(tripleItr->c_str(), tripleItr->size(), kObjectType);
+      tripleItr++;
+    }
   batchWriter.EndArray();
+  
+  batchWriter.Key("keys");
+  batchWriter.StartArray();
+    std::vector<std::string> keys = batch.keyList;
+    std::vector<std::string>::iterator keyItr = keys.begin();
+    while (keyItr != keys.end())
+    {
+      batchWriter.RawValue(keyItr->c_str(), keyItr->size(), kObjectType);
+      keyItr++;
+    }
+  batchWriter.EndArray();
+  
   batchWriter.EndObject();
-}
-
-void KafkaUtil::addTripleToBatch()
-{
-  //writer.Reset(batchStrBuf);
-  batchWriter.RawValue(tripleStrBuf.GetString(), tripleStrBuf.GetSize(), kObjectType);
+  
+  // send to Kafka.
+  printf(">>> (%d): size(%ld) <<<\n", partition, batchStrBuf.GetSize());
 }

@@ -118,8 +118,6 @@ struct KafkaDump : public Callback {
         if (!doProcessing)
           return;
       
-        kafkaUtil.startBatch();
-      
         if(1 <= endBlockId && endBlockId < blkID) {
             enoughProcessing = true;
             return;
@@ -156,8 +154,8 @@ struct KafkaDump : public Callback {
         if (blkID > 0)
         {
           //associate block with previous
-          kafkaUtil.submitTriple(kafkaUtil.getBlockAsJson(), 
-                  kafkaUtil.getPrevBlockAsJson(), "m_prevBlock", "m_NextBlock");
+          kafkaUtil.submitTriple(kafkaUtil.getBlockElement(), 
+                  kafkaUtil.getPrevBlockElement(), "m_prevBlock", "m_NextBlock");
         }
         
         memcpy(prevBlockHash, bufBlockHash, 2 * kSHA256ByteSize + 1);
@@ -170,7 +168,6 @@ struct KafkaDump : public Callback {
         if (!doProcessing)
           return;
 
-        kafkaUtil.endBatch();
 //      fprintf(objySimFile,
 //        " BLOCK(%s)\n\n",
 //        kafkaUtil.getBatchAsJson());
@@ -208,8 +205,8 @@ struct KafkaDump : public Callback {
         
         kafkaUtil.transactionToJson(txID, buf);
         //associate transaction to block
-        kafkaUtil.submitTriple(kafkaUtil.getTransactionAsJson(), 
-                kafkaUtil.getBlockAsJson(), "m_block", "m_Transactions");
+        kafkaUtil.submitTriple(kafkaUtil.getTransactionElement(), 
+                kafkaUtil.getBlockElement(), "m_block", "m_Transactions");
      }
 
     virtual void endTX(
@@ -289,12 +286,16 @@ struct KafkaDump : public Callback {
 
         kafkaUtil.inputToJson(inputID, bufUpTxHash, isCoinBase);
         //associate transaction to block
-        kafkaUtil.submitTriple(kafkaUtil.getTransactionAsJson(), 
-                kafkaUtil.getInputAsJson(), "m_Inputs", "m_Transaction");
+
         if (!isCoinBase) {
           kafkaUtil.upTxToJson(0, bufUpTxHash);
-          kafkaUtil.submitTriple(kafkaUtil.getInputAsJson(),
-                  kafkaUtil.getUpTxAsJson(), "m_UpTx", "");
+          // input doesn't have a key so we'll route it to the transaction
+          kafkaUtil.submitTriple(kafkaUtil.getTransactionElement(), 
+                  kafkaUtil.getInputElement(),
+                  kafkaUtil.getUpTxElement(), "m_Inputs", "");
+        } else {
+          kafkaUtil.submitTriple(kafkaUtil.getTransactionElement(), 
+                   kafkaUtil.getInputElement(), "m_Inputs");
         }
     }
     
@@ -346,11 +347,10 @@ struct KafkaDump : public Callback {
     //        objyAccess.addOutputToTransaction(output, currentTransaction);
             kafkaUtil.outputToJson(outputID, address, value);
             //associate transaction to output
-            kafkaUtil.submitTriple(kafkaUtil.getTransactionAsJson(), 
-                    kafkaUtil.getOutputAsJson(), "m_Outputs", "m_Transaction");
-            // associate output to address.
-            kafkaUtil.submitTriple(kafkaUtil.getOutputAsJson(),
-                    kafkaUtil.getAddressAsJson(), "m_Address", "m_Outputs");
+            kafkaUtil.submitTriple(kafkaUtil.getTransactionElement(), 
+                    kafkaUtil.getOutputElement(), 
+                    kafkaUtil.getAddressElement(),
+                    "m_Outputs", "m_Outputs");
         } else {
           // TBD.
           // report warning that such output doesn't have a valid address.
