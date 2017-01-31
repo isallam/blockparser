@@ -22,9 +22,15 @@ KafkaUtil::KafkaUtil(const KafkaUtil& orig) {
 }
 
 KafkaUtil::~KafkaUtil() {
+    RdKafka::ErrorCode resp = producer->flush(10);
+    if (resp != RdKafka::ERR_NO_ERROR)
+    {
+      std::cerr << "% Producer flush failed: " << RdKafka::err2str(resp) << std::endl;
+    }
 }
 
-void KafkaUtil::init(int numPartitions, int maxBatchSize) {
+void KafkaUtil::init(int numPartitions, int maxBatchSize, 
+        std::string kafkaBrokers, std::string kafkaTopic) {
   this->numPartitions = numPartitions;
   this->maxBatchSize = maxBatchSize;
   
@@ -42,7 +48,78 @@ void KafkaUtil::init(int numPartitions, int maxBatchSize) {
   writer.StartObject();  writer.EndObject();
   writer.Reset(emptyEdgeElement.buffer);
   writer.StartObject();  writer.EndObject();
+  
+  // kafka stuff
+    std::string brokers = kafkaBrokers;
+    std::string errstr;
+    std::string topic_str = kafkaTopic;
+    std::string debug;
 
+    /*
+     * Create configuration objects
+     */
+    RdKafka::Conf *conf = RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL);
+    RdKafka::Conf *tconf = RdKafka::Conf::create(RdKafka::Conf::CONF_TOPIC);
+    // -------------------
+    // compression option.
+    // -------------------
+//  -z <codec>      Enable compression:
+//                  none|gzip|snappy
+//    case 'z':
+//      if (conf->set("compression.codec", optarg, errstr) !=
+//          RdKafka::Conf::CONF_OK) {
+    // -------------------
+    // stats option
+    // -------------------
+//  -M <intervalms> Enable statistics
+//      if (conf->set("statistics.interval.ms", optarg, errstr) !=
+//          RdKafka::Conf::CONF_OK) {
+    /*
+     * Set configuration properties
+     */
+    conf->set("metadata.broker.list", brokers, errstr);
+
+    // -----------------------
+    // Debug options if needed
+    // -----------------------
+//-d [facs..]     Enable debugging contexts:
+//            all,generic,broker,topic,metadata,queue,msg,protocol,cgrp,security,fetch,feature
+
+    if (!debug.empty()) {
+      if (conf->set("debug", debug, errstr) != RdKafka::Conf::CONF_OK) {
+        std::cerr << errstr << std::endl;
+        exit(1);
+      }
+    }
+    
+    
+    /*
+     * Create producer using accumulated global configuration.
+     */
+    producer = RdKafka::Producer::create(conf, errstr);
+    if (!producer) {
+      std::cerr << "Failed to create producer: " << errstr << std::endl;
+      exit(1);
+    }
+    std::cout << "% Created producer " << producer->name() << std::endl;
+
+    /*
+     * Create topic handle.
+     */
+    topic = RdKafka::Topic::create(producer, topic_str,
+               tconf, errstr);
+    if (!topic) {
+      std::cerr << "Failed to create topic: " << errstr << std::endl;
+      exit(1);
+    }
+
+//    producer->poll(0);
+//    RdKafka::ErrorCode resp = producer->flush(0);
+//    if (resp != RdKafka::ERR_NO_ERROR)
+//    {
+//      std::cerr << "% Producer flush failed: " << RdKafka::err2str(resp) << std::endl;
+//      exit(-1);
+//    }
 }
 
 
@@ -292,5 +369,27 @@ void KafkaUtil::submitBatch(int partition, const Batch& batch)
   batchWriter.EndObject();
   
   // send to Kafka.
-  printf(">>> (%d): size(%ld) <<<\n", partition, batchStrBuf.GetSize());
+  //printf(">>> (%d): size(%ld) <<<\n", partition, batchStrBuf.GetSize());
+  // ------------------------
+  // produce into kafka topic
+  // ------------------------
+      /*
+       * Produce message
+       */
+      RdKafka::ErrorCode resp =
+      producer->produce(topic, partition,
+          RdKafka::Producer::RK_MSG_COPY /* Copy payload */,
+          const_cast<char *>(batchStrBuf.GetString()), batchStrBuf.GetSize(),
+          NULL, NULL);
+      if (resp != RdKafka::ERR_NO_ERROR)
+      {
+        std::cerr << "% Produce failed: " << RdKafka::err2str(resp) << std::endl;
+        std::cerr << "% we used partition: " << partition << std::endl;
+        exit(-1);
+      }
+    //  else
+    //    std::cerr << "% Produced message (" << batchStrBuf.GetSize() << " bytes)" << std::endl;
+
+      producer->poll(0);
+  
 }

@@ -24,6 +24,13 @@
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/document.h"
 
+/*
+ * Typically include path in a real application would be
+ * #include <librdkafka/rdkafkacpp.h>
+ */
+#include "librdkafka/src-cpp/rdkafkacpp.h"
+
+
 using namespace rapidjson;
 
 const int SizeOfAddress = 40;
@@ -71,7 +78,8 @@ public:
   KafkaUtil(const KafkaUtil& orig);
   virtual ~KafkaUtil();
   
-  void init(int numPipelines = 16, int maxBatchSize = 10);
+  void init(int numPartitions = 16, int maxBatchSize = 10, 
+        std::string kafkaBrokers = "localhost", std::string kafkaTopic = "bitcoin");
 
   void blockToJson(int id, int version, uint8_t* prevBlockHash, 
           uint8_t* blockMerkleRoot, long blkTime, uint8_t* hash);
@@ -144,6 +152,12 @@ private:
     int maxBatchSize;
 
     BatchList batchList;
+    
+    // ----------------
+    // Kafka stuff
+    // ----------------
+    RdKafka::Producer *producer;
+    RdKafka::Topic *topic;
 };
 
 #endif /* KAFKAUTIL_H */

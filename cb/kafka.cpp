@@ -55,6 +55,34 @@ struct KafkaDump : public Callback {
             .set_default(-1)
             .help("end processing at block <block> (default: 0)")
         ;
+        parser
+            .add_option("-p", "--numPartitions")
+            .action("store")
+            .type("int")
+            .set_default(16)
+            .help("number of Kafka partitions (default: 16)")
+        ;
+        parser
+            .add_option("-s", "--batchSize")
+            .action("store")
+            .type("int")
+            .set_default(10)
+            .help("number of triple messages in a JSON batch (default: 10)")
+        ;
+        parser
+            .add_option("-h", "--brokers")
+            .action("store")
+            .type("string")
+            .set_default("localhost")
+            .help("kafka brokers list (default: localhost)")
+        ;
+        parser
+            .add_option("-t", "--topic")
+            .action("store")
+            .type("string")
+            .set_default("bitcoin")
+            .help("kafka topic (default: bitcoin)")
+        ;
     }
 
     virtual const char                   *name() const         { return "kafkadump"; }
@@ -91,6 +119,7 @@ struct KafkaDump : public Callback {
         beginBlockId = values.get("beginBlock").asInt64();
         endBlockId = values.get("endBlock").asInt64();
         
+        
         doProcessing = false;
         
         info("dumping the blockchain ...");
@@ -100,7 +129,13 @@ struct KafkaDump : public Callback {
         objyEdgeSimFile = fopen("objyEdgeSimFile.txt", "w");
         if(!objyEdgeSimFile) sysErrFatal("couldn't open file objyEdgeSimFile.txt for writing\n");
 
-        kafkaUtil.init();
+        int numPartitions = values.get("numPartitions").asInt32();
+        int batchSize = values.get("batchSize").asInt32();
+        std::string kafkaBrokers = static_cast<const char*>(values.get("brokers"));
+        std::string kafkaTopic = static_cast<const char*>(values.get("topic"));
+        
+        //printf("p: %d, b: %d, h: %s, t: %s\n", numPartitions, batchSize, kafkaBrokers.c_str(), kafkaTopic.c_str());
+        kafkaUtil.init(numPartitions, batchSize, kafkaBrokers, kafkaTopic);
         
         return 0;
     }

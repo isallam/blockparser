@@ -125,6 +125,8 @@ blockparser
         Install dependencies:
 
             sudo apt-get install libssl-dev build-essential g++ libboost-all-dev libsparsehash-dev git-core perl
+				Because this branch include librdkafka we need libsasl
+						sudo apt install libsasl2-dev
 
         Get the source:
 

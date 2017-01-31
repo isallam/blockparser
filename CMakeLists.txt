@@ -29,11 +29,13 @@ add_subdirectory (t)
 add_subdirectory (h9) 
 add_subdirectory (scrypt) 
 add_subdirectory (crypto) 
+add_subdirectory (librdkafka/src) 
+add_subdirectory (librdkafka/src-cpp) 
 add_subdirectory (cb) 
 
 set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_CXX_FLAGS})
 
-SET(SYSTEM_LIBS crypto dl)
+SET(SYSTEM_LIBS crypto dl pthread ssl z sasl2)
 
 add_executable(blockparser ${SOURCES} parser.cpp)
 #add_executable(tst ${SOURCES} ${TEST_SOURCES} test.cpp tst.cpp)
