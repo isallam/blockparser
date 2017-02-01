@@ -17,11 +17,12 @@ set(CMAKE_CXX_FLAGS " -O6 -fno-inline -m64 -Wall -msse3 -Wextra -Wformat -pedant
 
 ADD_DEFINITIONS(-DNDEBUG)
 ADD_DEFINITIONS(-DBITCOIN)
-ADD_DEFINITIONS(-DWANT_DENSE)
+#ADD_DEFINITIONS(-DWANT_DENSE)
+ADD_DEFINITIONS(-DNO_GOOGLE_MAP)
 ADD_DEFINITIONS(-D__STDC_FORMAT_MACROS=1)
 #ADD_DEFINITIONS(-DRAPIDJSON_SSE42)
 
-include_directories(. ./json_include)
+include_directories(. ./json_include ./sparsehash)
  
 SET(SOURCES callback.cpp opcodes.cpp option.cpp rmd160.cpp sha256.cpp timer.cpp util.cpp)
 
