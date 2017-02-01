@@ -15,12 +15,11 @@
 #define OBJYSCHEMA_H
 
 #include <ooObjy.h>
-#include <objy/db/Connection.h>
 #include <objy/data/Data.h>
 #include <objy/data/List.h>
 #include <objy/data/DataSpecificationBuilder.h>
 
-namespace objydb = objy::db;
+//namespace objydb = objy::db;
 namespace objydata = objy::data;
 namespace objyschema = objy::schema_provider;
 

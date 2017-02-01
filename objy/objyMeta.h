@@ -25,8 +25,10 @@ const char* TransactionClassName  = "Transaction";
 const char* InputClassName        = "Input";
 const char* OutputClassName       = "Output";
 const char* AddressClassName      = "Address";
+const char* TagClassName          = "Tag";
 
 
+const char* TagRefAttr            = "m_Tag";
 
 const char* BlockIdAttr             = "m_Id";
 const char* BlockVersionAttr        = "m_Version";
@@ -39,13 +41,11 @@ const char* BlockNextBlockAttr      = "m_NextBlock";
 const char* BlockTransactionsAttr   = "m_Transactions";
 
 
-
 const char* TransactionIdAttr      = "m_Id";
 const char* TransactionHashAttr    = "m_Hash";
 const char* TransactionBlockAttr   = "m_Block";
 const char* TransactionInputsAttr  = "m_Inputs";
 const char* TransactionOutputsAttr = "m_Outputs";
-
 
 
 const char* InputIdAttr          = "m_Id";
@@ -55,7 +55,6 @@ const char* InputUpTxAttr        = "m_UpTx";
 const char* InputTransactionAttr = "m_Transaction";
 
 
-
 const char* OutputIdAttr          = "m_Id";
 const char* OutputValueAttr       = "m_Value";
 const char* OutputAddressHashAttr = "m_AddressHash"; 
@@ -63,10 +62,11 @@ const char* OutputAddressAttr     = "m_Address";
 const char* OutputTransactionAttr = "m_Transaction";
 
 
-
 const char* AddressHashAttr    = "m_Hash";
 const char* AddressOutputsAttr = "m_Outputs";
 
+const char* TagLabelAttr        = "m_Label";
+const char* TagObjectAttr       = "m_Ref";
 
 
 #endif /* OBJYMETA_H */

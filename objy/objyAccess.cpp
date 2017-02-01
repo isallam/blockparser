@@ -45,6 +45,18 @@ bool ObjyAccess::createSchema()
   // Some needed specs for various references and collections...
   // -----------------------------------------------------------
   
+  // Tag Reference
+   objydata::DataSpecificationHandle tagRefSpec = 
+           objydata::DataSpecificationBuilder<objydata::LogicalType::Reference>()    
+          .setReferencedClass(TagClassName)
+          .build();
+   
+   objydata::DataSpecificationHandle tagObjectRefSpec = 
+           objydata::DataSpecificationBuilder<objydata::LogicalType::Reference>()    
+          .setReferencedClass("ooObj")
+          .build();
+   
+  
   // Block Reference
    objydata::DataSpecificationHandle blockRefSpec = 
            objydata::DataSpecificationBuilder<objydata::LogicalType::Reference>()    
@@ -131,6 +143,7 @@ bool ObjyAccess::createSchema()
                  .addAttribute(BlockPrevBlockAttr, blockRefSpec)
                  .addAttribute(BlockNextBlockAttr, blockRefSpec)
                  .addAttribute(BlockTransactionsAttr, transactionsSpec)
+                 .addAttribute(TagRefAttr, tagRefSpec)
                  .build();
 
   
@@ -146,6 +159,7 @@ bool ObjyAccess::createSchema()
                  .addAttribute(TransactionBlockAttr, blockRefSpec)
                  .addAttribute(TransactionInputsAttr, inputsSpec)
                  .addAttribute(TransactionOutputsAttr, outputsSpec)
+                 .addAttribute(TagRefAttr, tagRefSpec)
                  .build();
   
   // -------------------
@@ -159,6 +173,7 @@ bool ObjyAccess::createSchema()
                  .addAttribute<objydata::ByteString /*Utf8String*/>(InputUpTxHashAttr)
                  .addAttribute(InputUpTxAttr, transactionRefSpec)
                  .addAttribute<bool>(InputIsCoinBaseAttr)
+                 .addAttribute(TagRefAttr, tagRefSpec)
                  .build();
 
   // -------------------
@@ -169,6 +184,7 @@ bool ObjyAccess::createSchema()
                  .setSuperclass("ooObj")
                  .addAttribute<objydata::ByteString/*Utf8String*/>(AddressHashAttr)
                  .addAttribute(AddressOutputsAttr, outputsForAddressSpec)
+                 .addAttribute(TagRefAttr, tagRefSpec)
                  .build();
   
   // -------------------
@@ -182,15 +198,27 @@ bool ObjyAccess::createSchema()
                  .addAttribute<objydata::ByteString/*Utf8String*/>(OutputAddressHashAttr)
                  .addAttribute(OutputAddressAttr, addressRefSpec)
                  .addAttribute<objy::uint_64>(OutputValueAttr)
+                 .addAttribute(TagRefAttr, tagRefSpec)
                  .build();
   
-  
+  // -------------------
+  // Tag Class
+  // -------------------
+  objydata::Class tagClass = 
+                 objydata::ClassBuilder(TagClassName)
+                 .setSuperclass("ooObj")
+                 .addAttribute<objydata::ByteString/*Utf8String*/>(TagLabelAttr)
+                 .addAttribute(TagObjectAttr, tagObjectRefSpec)
+                 .build();
+
   objyschema::SchemaProvider* provider = objyschema::SchemaProvider::defaultPersistentProvider();
   provider->represent(blockClass);
   provider->represent(transactionClass);
   provider->represent(inputClass);
   provider->represent(outputClass);
   provider->represent(addressClass);
+  provider->represent(tagClass);
+  
   
   return true;
 }
@@ -291,6 +319,7 @@ objydata::Reference ObjyAccess::createBlock(
     // set next block on prevBlock
     prevBlock.referencedObject().attributeValue(blockClass.nextBlockAttr, blockClass.value);
     blockClass.value.set<objydata::Reference>(objectRef);
+    //blockClass.value.get<objydata::Reference>().set(objectRef, false);
   }
   /**
                  .addAttribute("prevBlock", refSpec)
@@ -426,6 +455,7 @@ bool ObjyAccess::addTransactionToBlock(objydata::Reference& transaction, objydat
   // add block to transaction.
   transaction.referencedObject().attributeValue(transactionClass.blockAttr, transactionClass.value);
   transactionClass.value.set<objydata::Reference>(block);
+  //transactionClass.value.get<objydata::Reference>().set(block, false);
   
   return true;
 }
