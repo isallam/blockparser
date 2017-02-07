@@ -67,6 +67,9 @@ int main(int argc, char** argv) {
 
       objy::tool::StringToolOutputSink sink;
       objy::tool::Tool::execute("importPlacement", params, &sink);
+      
+      std::cout << sink.getOut() << std::endl;
+      std::cerr << sink.getErr() << std::endl;
     } 
     catch (ooKernelException& e)
     {
