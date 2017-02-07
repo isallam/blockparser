@@ -312,7 +312,7 @@ const DataElement& KafkaUtil::constructTriple(const DataElement& from,
     tripleWriter.StartObject();
     tripleWriter.Key("from"); 
     tripleWriter.RawValue(from.buffer.GetString(), from.buffer.GetSize(), kObjectType);
-    tripleWriter.Key("To"); 
+    tripleWriter.Key("to"); 
     tripleWriter.RawValue(to.buffer.GetString(), to.buffer.GetSize(), kObjectType);
     tripleWriter.Key("connectionMessage"); 
     tripleWriter.RawValue(edge.buffer.GetString(), edge.buffer.GetSize(), kObjectType);
