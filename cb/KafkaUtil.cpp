@@ -361,7 +361,8 @@ void KafkaUtil::submitBatch(int partition, const Batch& batch)
     std::vector<std::string>::iterator keyItr = keys.begin();
     while (keyItr != keys.end())
     {
-      batchWriter.RawValue(keyItr->c_str(), keyItr->size(), kObjectType);
+//      batchWriter.RawValue(keyItr->c_str(), keyItr->size(), kObjectType);
+      batchWriter.String(keyItr->c_str(), keyItr->size(), true);
       keyItr++;
     }
   batchWriter.EndArray();
