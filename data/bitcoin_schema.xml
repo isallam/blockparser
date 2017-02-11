@@ -21,7 +21,7 @@
               <Members>
                 <StringMember name="m_Hash" id="2"
                   position="1" visibility="private" arraySize="1" isVariableArray="false"
-                  type="vString" fixedLength="0"
+                  type="utf8String" fixedLength="0"
                 />
                 <RefMember name="m_Outputs" id="3"
                   position="2" visibility="private" arraySize="1" isVariableArray="true"

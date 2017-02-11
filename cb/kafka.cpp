@@ -190,7 +190,7 @@ struct KafkaDump : public Callback {
         {
           //associate block with previous
           kafkaUtil.submitTriple(kafkaUtil.getBlockElement(), 
-                  kafkaUtil.getPrevBlockElement(), "m_prevBlock", "m_NextBlock");
+                  kafkaUtil.getPrevBlockElement(), "m_PrevBlock", "m_NextBlock");
         }
         
         memcpy(prevBlockHash, bufBlockHash, 2 * kSHA256ByteSize + 1);
@@ -241,7 +241,7 @@ struct KafkaDump : public Callback {
         kafkaUtil.transactionToJson(txID, buf);
         //associate transaction to block
         kafkaUtil.submitTriple(kafkaUtil.getTransactionElement(), 
-                kafkaUtil.getBlockElement(), "m_block", "m_Transactions");
+                kafkaUtil.getBlockElement(), "m_Block", "m_Transactions");
      }
 
     virtual void endTX(
