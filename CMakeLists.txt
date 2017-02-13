@@ -22,7 +22,9 @@ ADD_DEFINITIONS(-DNO_GOOGLE_MAP)
 ADD_DEFINITIONS(-D__STDC_FORMAT_MACROS=1)
 #ADD_DEFINITIONS(-DRAPIDJSON_SSE42)
 
-include_directories(. ./json_include ./sparsehash)
+SET(OBJY_VERSION 12.4)
+
+include_directories(. ./json_include ./sparsehash /opt/Objectivity/${OBJY_VERSION}/include)
  
 SET(SOURCES callback.cpp opcodes.cpp option.cpp rmd160.cpp sha256.cpp timer.cpp util.cpp)
 
@@ -36,11 +38,16 @@ add_subdirectory (cb)
 
 set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_CXX_FLAGS})
 
+link_directories(/opt/Objectivity/${OBJY_VERSION}/lib)
+
 SET(SYSTEM_LIBS crypto dl pthread ssl z sasl2)
+SET(OBJYLIBS oo.${OBJY_VERSION} ooSessionManager.${OBJY_VERSION} ooConfiguration.${OBJY_VERSION} ooObjectModel.${OBJY_VERSION} ooData.${OBJY_VERSION} ooUtil.${OBJY_VERSION} ooError.${OBJY_VERSION} ooTool.${OBJY_VERSION})
+
 
 add_executable(blockparser ${SOURCES} parser.cpp)
 #add_executable(tst ${SOURCES} ${TEST_SOURCES} test.cpp tst.cpp)
-
+add_executable(objysetup objy/objyAccess.cpp objysetup.cpp)
 
 target_link_libraries(blockparser LINK_PUBLIC ${SYSTEM_LIBS})
 #target_link_libraries(tst LINK_PUBLIC ${SYSTEM_LIBS})
+target_link_libraries(objysetup LINK_PUBLIC ${SYSTEM_LIBS} ${OBJYLIBS})
