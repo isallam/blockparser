@@ -123,6 +123,7 @@ private:
 
   void submitBatch(int partition, const Batch& batch);
 
+  int hashCode(const std::string strValue);
   
 private:
     DataElement blockElement;

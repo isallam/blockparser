@@ -299,7 +299,8 @@ void KafkaUtil::submitTriple(const DataElement& from, const EdgeElement& edge,
     // Attempt to filter/process the triple message if enabled
     const DataElement& triple = constructTriple(from, edge, to, attribute, inverseAttribute);
      
-    int partition = std::hash<std::string>()(triple.key) % numPartitions;
+//    int partition = std::hash<std::string>()(triple.key) % numPartitions;
+    int partition = abs(hashCode(triple.key)) % numPartitions;
     addTripleToBatch(partition, triple);
 }
 
@@ -393,4 +394,12 @@ void KafkaUtil::submitBatch(int partition, const Batch& batch)
 
       producer->poll(0);
   
+}
+
+int KafkaUtil::hashCode(const std::string stringValue) {
+  int hash = 0;
+  for (int i = 0; i < stringValue.size(); i++) {
+    hash = (hash << 5) - hash + stringValue[i];
+  }
+  return hash;
 }
