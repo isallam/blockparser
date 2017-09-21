@@ -11,8 +11,11 @@
  * Created on January 5, 2017, 4:06 PM
  */
 
+#include <iostream>
+
 #include "objyMeta.h"
 #include "objyAccess.h"
+
 
 ObjyAccess::ObjyAccess() {
 }
@@ -228,6 +231,7 @@ objydata::Reference ObjyAccess::createOutput(
   
   if (addressRef)
   {
+    //std::cout << "addressRef: " << objydata::oidFor(addressRef).sprint() << std::endl;
     object.attributeValue(outputClass.addressAttr, outputClass.value);
     outputClass.value.set(addressRef);
     
@@ -290,8 +294,8 @@ bool ObjyAccess::addOutputToTransaction(objydata::Reference& output, objydata::R
   transaction.referencedObject().attributeValue(transactionClass.outputsAttr, transactionClass.value);
   transactionClass.value.get<objydata::List>().append(output);
   
-  // add transaction to input
-  output.referencedObject().attributeValue(inputClass.transactionAttr, outputClass.value);
+  // add transaction to output
+  output.referencedObject().attributeValue(outputClass.transactionAttr, outputClass.value);
   outputClass.value.set<objydata::Reference>(transaction);
 
   return true;
