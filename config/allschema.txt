@@ -1,0 +1,59 @@
+UPDATE SCHEMA
+{
+	CREATE CLASS Block 
+	{
+		m_Id:             Integer {Encoding: Unsigned, Storage: b64}, 
+		m_Version:        Integer {Encoding: Unsigned}, 
+    m_Time:           DateTime,
+		m_Hash:           String {Encoding: Utf8},
+		m_PrevBlockHash:  String {Encoding: Utf8},
+		m_MerkleRootHash: String {Encoding: Utf8}, 
+		m_PrevBlock:      Reference {Referenced: Block},
+		m_NextBlock:      Reference {Referenced: Block},
+		m_Transactions:   List {Element: Reference{Referenced: Transaction}, CollectionName: SegmentedArray},
+		m_Tag:            Reference {Referenced: Tag}
+  }
+
+	CREATE CLASS Transaction 
+	{
+		m_Id:             Integer {Encoding: Unsigned, Storage: b64}, 
+		m_Hash:           String {Encoding: Utf8}, 
+		m_Block:          Reference {Referenced: Block},
+		m_Inputs:         List {Element: Reference{Referenced: Input}, CollectionName: SegmentedArray},
+		m_Outputs:        List {Element: Reference{Referenced: Output}, CollectionName: SegmentedArray},
+		m_Tag:            Reference {Referenced: Tag}
+  }
+
+  CREATE CLASS Input
+  {
+		m_Id:             Integer {Encoding: Unsigned, Storage: b64}, 
+		m_UpTxHash:       String {Encoding: Utf8},
+		m_Transaction:    Reference {Referenced: Transaction},
+		m_UpTx:           Reference {Referenced: Transaction},
+		m_IsCoinBase:     Bool,
+		m_Tag:            Reference {Referenced: Tag}
+  }
+
+  CREATE CLASS Output
+  {
+		m_Id:             Integer {Encoding: Unsigned, Storage: b64}, 
+		m_Transaction:    Reference {Referenced: Transaction},
+		m_Address:        Reference {Referenced: Address},
+		m_AddressHash:    String {Encoding: Utf8},
+		m_Value:          Integer {Encoding: Unsigned, Storage: b64}, 
+		m_Tag:            Reference {Referenced: Tag}
+  }
+
+  CREATE CLASS Address
+  {
+		m_Hash:           String {Encoding: Utf8},
+		m_Outputs:        List {Element: Reference{Referenced: Output}, CollectionName: SegmentedArray},
+		m_Tag:            Reference {Referenced: Tag}
+  }
+
+  CREATE CLASS Tag
+  {
+    m_Label:          String {Encoding: Utf8},
+		m_Ref:            Reference {Referenced: ooObj}
+  }
+}

@@ -28,8 +28,8 @@ struct ClassCache {
   char* name;
   objydata::Class classRef;
   objydata::Variable value;
-  //objydata::Utf8String stringValue = objydata::createUtf8String();
-  objydata::ByteString stringValue = objydata::createByteString();
+  objydata::Utf8String stringValue = objydata::createUtf8String();
+  //objydata::ByteString stringValue = objydata::createByteString();
 };
 
 
@@ -84,7 +84,6 @@ class ObjyAccess {
 public:
   ObjyAccess();
   virtual ~ObjyAccess();
-  bool createSchema();
   bool setupCache();
   
   objydata::Reference createBlock(

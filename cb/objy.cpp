@@ -123,17 +123,7 @@ struct ObjyDump : public Callback {
    
         try {
           trx = new objydb::Transaction(objydb::OpenMode::Update, "write_session");
-          // create schema 
-          bool bRet = objyAccess.createSchema();
-          
           trx->commit();
-//	  // importPlacement
-//          objy::tool::ToolParameters params;
-//          params.add("infile", "../data/bitcoin.pmd");
-//          params.add("bootfile", fdname.c_str());
-//
-//          objy::tool::StringToolOutputSink sink;
-//          objy::tool::Tool::execute("importPlacement", params, &sink);
         } 
         catch (ooKernelException& e)
         {

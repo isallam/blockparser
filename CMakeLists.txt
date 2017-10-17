@@ -21,7 +21,7 @@ ADD_DEFINITIONS(-DWANT_DENSE)
 ADD_DEFINITIONS(-D__STDC_FORMAT_MACROS=1)
 ADD_DEFINITIONS(-D_GLIBCXX_USE_CXX11_ABI=0)
 
-SET(OBJY_VERSION 12.4)
+SET(OBJY_VERSION 12.5)
 
 include_directories(. /opt/Objectivity/${OBJY_VERSION}/include)
  
@@ -44,9 +44,7 @@ SET(OBJYLIBS oo.${OBJY_VERSION} ooSessionManager.${OBJY_VERSION} ooConfiguration
 
 add_executable(blockparser ${SOURCES} parser.cpp)
 #add_executable(tst ${SOURCES} ${TEST_SOURCES} test.cpp tst.cpp)
-add_executable(objysetup ${SOURCES} ${TEST_SOURCES} test.cpp objysetup.cpp)
 
 
 target_link_libraries(blockparser LINK_PUBLIC ${SYSTEM_LIBS} ${OBJYLIBS})
 #target_link_libraries(tst LINK_PUBLIC ${SYSTEM_LIBS} ${OBJYLIBS})
-target_link_libraries(objysetup LINK_PUBLIC ${SYSTEM_LIBS} ${OBJYLIBS})
