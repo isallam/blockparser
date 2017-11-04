@@ -40,13 +40,24 @@
           <SingleDatabaseGroup/>
           <DatabaseGroupConfiguration selection="Any">
             <DatabaseConfiguration
-              databasePageSize="16384"
+              databasePageSize="0"
 							fileSizeLimit="400000k"/>
           </DatabaseGroupConfiguration>
         </Scope>
       </ContainerPlacer>
       <ContainerPlacer name="AddressContainerPlacer"
         description="Placer for Address  containers" placeInto="OwnScope">
+        <Scope>
+          <SingleDatabaseGroup />
+          <DatabaseGroupConfiguration selection="Any">
+            <DatabaseConfiguration
+              databasePageSize="0"
+							fileSizeLimit="200000k"/>
+          </DatabaseGroupConfiguration>
+        </Scope>
+      </ContainerPlacer>
+      <ContainerPlacer name="BlockContainerPlacer"
+        description="Placer for Block  containers" placeInto="OwnScope">
         <Scope>
           <SingleDatabaseGroup />
           <DatabaseGroupConfiguration selection="Any">
@@ -94,9 +105,27 @@
           </ContainerGroupConfiguration>
         </Scope>
       </ObjectPlacer>
+      <ObjectPlacer name="BlockObjectPlacer"
+        description="Places Block objects in own databases" placeInto="OwnScope"
+        placeOnNewPage="false"
+        containerPlacer="BlockContainerPlacer">
+        <Scope>
+          <SingleContainerGroup />
+          <ContainerGroupConfiguration selection="Any">
+            <ContainerConfiguration 
+							growByPolicy="PercentageOfCurrentSize" growBy="100" 
+							initialNumberOfPages="100" pageLimit="20000"
+              placeInOwnFile="false" 
+							maintainObjectCounts="true">
+              <ObjectCountLimit objectClass="Address" objectLimit="0" containerIsFullAtLimit="false" />
+            </ContainerConfiguration>
+          </ContainerGroupConfiguration>
+        </Scope>
+      </ObjectPlacer>
 
     </ObjectPlacers>
     <Rules>
+      <Rule objectClass="Block" objectPlacer="BlockObjectPlacer" />
       <Rule objectClass="Address" objectPlacer="AddressObjectPlacer" />
   	</Rules>
   </PlacementModel>

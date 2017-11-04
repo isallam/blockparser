@@ -41,11 +41,14 @@ const char* BlockNextBlockAttr      = "m_NextBlock";
 const char* BlockTransactionsAttr   = "m_Transactions";
 
 
-const char* TransactionIdAttr      = "m_Id";
-const char* TransactionHashAttr    = "m_Hash";
-const char* TransactionBlockAttr   = "m_Block";
-const char* TransactionInputsAttr  = "m_Inputs";
-const char* TransactionOutputsAttr = "m_Outputs";
+const char* TransactionIdAttr       = "m_Id";
+const char* TransactionHashAttr     = "m_Hash";
+const char* TransactionTimeAttr     = "m_MintTime";
+const char* TransactionInValueAttr  = "m_InValue";
+const char* TransactionOutValueAttr = "m_OutValue";
+const char* TransactionBlockAttr    = "m_Block";
+const char* TransactionInputsAttr   = "m_Inputs";
+const char* TransactionOutputsAttr  = "m_Outputs";
 
 
 const char* InputIdAttr          = "m_Id";

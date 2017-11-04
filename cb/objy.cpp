@@ -66,6 +66,10 @@ struct ObjyDump : public Callback {
   objydata::Reference previousBlock;
   objydata::Reference currentBlock;
   objydata::Reference currentTransaction;
+  // cached data
+  uint64_t currentBlockTime;
+  uint64_t currentTrxInValue;
+  uint64_t currentTrxOutValue;
 
   ObjyDump() {
     parser
@@ -122,7 +126,7 @@ struct ObjyDump : public Callback {
     connection = objydb::Connection::connect(fdname.c_str());
 
     try {
-      trx = new objydb::Transaction(objydb::OpenMode::Update, "write_session");
+      trx = new objydb::Transaction(objydb::OpenMode::Update, "write");
       trx->commit();
     } catch (ooKernelException& e) {
       errFatal(e.what());
@@ -212,7 +216,9 @@ struct ObjyDump : public Callback {
     currentBlock = objyAccess.createBlock(blkID, version, bufPrevBlockHash,
             bufBlockMerkleRoot, blkTime, bufBlockHash, previousBlock);
 
-    int commitEvery = 50;
+    currentBlockTime = blkTime;
+
+    int commitEvery = 1000;
 //    if (b->height > 100000)
 //      commitEvery = 500;
 //    if (b->height > 200000)
@@ -252,6 +258,9 @@ struct ObjyDump : public Callback {
     uint8_t* buf = (uint8_t*) alloca(2 * size + 1);
     toHex(buf, hash);
 
+    currentTrxInValue = 0;
+    currentTrxOutValue = 0;
+    
     if (dumpToFiles)
       fprintf(objySimFile,
             "  Trx(TXID:%" PRIu64 ", "
@@ -264,7 +273,8 @@ struct ObjyDump : public Callback {
     uint8_t *key = allocHash256();
     memcpy(key, hash, kSHA256ByteSize);
 
-    currentTransaction = objyAccess.createTransaction(txID, buf);
+    currentTransaction = objyAccess.createTransaction(txID, buf, currentBlockTime,
+            currentBlock);
     trxMap[key] = objydata::oidFor(currentTransaction);
 
     objyAccess.addTransactionToBlock(currentTransaction, currentBlock);
@@ -279,6 +289,10 @@ struct ObjyDump : public Callback {
       fprintf(objySimFile,
             "  EndTX(    lockTime = %" PRIu32 "\n",
             (uint32_t) lockTime);
+    // update TrxInValue and TrxOutValue
+    objyAccess.updateTransactionValues(currentTransaction, 
+                    currentTrxInValue, currentTrxOutValue);
+    
   }
 
   virtual void startInputs(
@@ -362,9 +376,8 @@ struct ObjyDump : public Callback {
     }
 
     objydata::Reference input = objyAccess.createInput(inputID, bufUpTxHash, upTrxRef,
-            isCoinBase);
+            isCoinBase, currentTransaction);
 
-    objyAccess.addInputToTransaction(input, currentTransaction);
   }
   // Called when at the end of a TX input
 
@@ -440,7 +453,7 @@ struct ObjyDump : public Callback {
             );
 
     objydata::Reference output = objyAccess.createOutput(outputID, address,
-            addressRef, value);
+            addressRef, value, currentTransaction);
     objyAccess.addOutputToTransaction(output, currentTransaction);
 
     uint32_t oi = outputIndex;

@@ -18,6 +18,9 @@ UPDATE SCHEMA
 	{
 		m_Id:             Integer {Encoding: Unsigned, Storage: b64}, 
 		m_Hash:           String {Encoding: Utf8}, 
+    m_MintTime:       DateTime,
+		m_InValue:        Integer {Encoding: Unsigned, Storage: b64}, 
+		m_OutValue:       Integer {Encoding: Unsigned, Storage: b64}, 
 		m_Block:          Reference {Referenced: Block},
 		m_Inputs:         List {Element: Reference{Referenced: Input}, CollectionName: SegmentedArray},
 		m_Outputs:        List {Element: Reference{Referenced: Output}, CollectionName: SegmentedArray},
