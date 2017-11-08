@@ -4,6 +4,7 @@
 #include <util.h>
 #include <stdio.h>
 #include <string>
+#include <timer.h>
 #include <common.h>
 #include <errlog.h>
 #include <option.h>
@@ -36,8 +37,6 @@ typedef GoogMap<Hash256, ooId, Hash256Hasher, Hash256Equal>::Map TrxMap;
 typedef GoogMap<Hash160, ooId, Hash160Hasher, Hash160Equal>::Map AddrMap;
 
 struct ObjyDump : public Callback {
-  FILE *objySimFile;
-  FILE *objyEdgeSimFile;
 
   // objy stuff
   std::string fdname;
@@ -48,6 +47,7 @@ struct ObjyDump : public Callback {
   uint64_t blkID;
   uint64_t inputID;
   uint64_t outputID;
+  uint64_t numCommits;
 
   bool isCoinBase;
   int64_t cutoffBlock;
@@ -108,10 +108,11 @@ struct ObjyDump : public Callback {
           int argc,
           const char *argv[]
           ) {
-    txID = -1;
+    txID = 0;
     blkID = 0;
     inputID = 0;
     outputID = 0;
+    numCommits = 0;
 
     // TBD... boot file is hard coded for now, will be params later
     fdname = "../data/bitcoin.boot";
@@ -152,11 +153,6 @@ struct ObjyDump : public Callback {
 
     info("dumping the blockchain ...");
 
-    objySimFile = fopen("objySimFile.txt", "w");
-    if (!objySimFile) sysErrFatal("couldn't open file objySimFile.txt for writing\n");
-    objyEdgeSimFile = fopen("objyEdgeSimFile.txt", "w");
-    if (!objyEdgeSimFile) sysErrFatal("couldn't open file objyEdgeSimFile.txt for writing\n");
-
     trx->start(objydb::OpenMode::Update);
 
     objyAccess.setupCache(); // cache schema and attributes for later.
@@ -171,6 +167,8 @@ struct ObjyDump : public Callback {
     if (0 <= cutoffBlock && cutoffBlock < b->height) {
       wrapup();
     }
+
+    static auto last = Timer::usecs();
 
     const uint8_t * p = b->chunk->getData();
     uint8_t blockHash[kSHA256ByteSize];
@@ -202,26 +200,34 @@ struct ObjyDump : public Callback {
 
     currentBlockTime = blkTime;
 
-    int commitEvery = 1000;
+    int commitEvery = 50000; // commit every 100K transactions once we reach
+                              // a block boundary.
 //    if (b->height > 100000)
 //      commitEvery = 500;
 //    if (b->height > 200000)
 //      commitEvery = 100;
 
-    if (0 == (b->height) % commitEvery) {
-      fprintf(
-              stderr,
-              "block=%8" PRIu64 " "
-              "nbOutputs=%8" PRIu64 "\r",
-              b->height,
-              outputID //outputMap.size()
-              );
+//    if (0 == (b->height) % commitEvery) {
+    if ((txID / commitEvery) > numCommits) {
+//      fprintf(
+//              stderr,
+//              "block=%8" PRIu64 " "
+//              "num_transactions=%8" PRIu64 "\r",
+//              b->height,
+//              txID
+//              );
       trx->commit();
+      numCommits++;
+      auto now = Timer::usecs();
+      auto elapsedSinceLastTime = now - last;
+      auto elapsedInMSec = (elapsedSinceLastTime*1e-3);
+      info(" # block:%8" PRIu64 " "
+              "- # transactions:%12" PRIu64 " - time: %10.2f msec.    \r",
+              b->height,
+              txID, 
+              elapsedInMSec);
+      last = now;
       trx->start(objydb::OpenMode::Update);
-      //            if (0==(b->height)%2000) {
-      //              trx->abort();
-      ////              trx->start(objydb::OpenMode::Update);
-      ////            }
 
       //enoughProcessing = true;
     }
@@ -253,6 +259,7 @@ struct ObjyDump : public Callback {
     trxMap[key] = objydata::oidFor(currentTransaction);
 
     objyAccess.addTransactionToBlock(currentTransaction, currentBlock);
+    txID++;
 
   }
 
@@ -437,7 +444,6 @@ struct ObjyDump : public Callback {
   }
 
   virtual void wrapup() {
-    fclose(objySimFile);
 
     if (trx->getOpenMode() != objydb::OpenMode::NotOpened)
       trx->commit();
