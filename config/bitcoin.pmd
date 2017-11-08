@@ -41,7 +41,7 @@
           <DatabaseGroupConfiguration selection="Any">
             <DatabaseConfiguration
               databasePageSize="0"
-							fileSizeLimit="400000k"/>
+		fileSizeLimit="2000000k"/>
           </DatabaseGroupConfiguration>
         </Scope>
       </ContainerPlacer>
@@ -52,7 +52,7 @@
           <DatabaseGroupConfiguration selection="Any">
             <DatabaseConfiguration
               databasePageSize="0"
-							fileSizeLimit="200000k"/>
+		fileSizeLimit="1000000k"/>
           </DatabaseGroupConfiguration>
         </Scope>
       </ContainerPlacer>
@@ -63,7 +63,7 @@
           <DatabaseGroupConfiguration selection="Any">
             <DatabaseConfiguration
               databasePageSize="0"
-							fileSizeLimit="200000k"/>
+		fileSizeLimit="1000000k"/>
           </DatabaseGroupConfiguration>
         </Scope>
       </ContainerPlacer>
