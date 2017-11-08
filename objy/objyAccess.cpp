@@ -168,6 +168,7 @@ objydata::Reference ObjyAccess::createInput(
                       objydata::referenceFor(upTrxRef));
   }
 
+  //printf("adding input to transaction: %s\n", objy::data::oidFor(transaction).sprint());
   classAccessor->setReference(object, InputTransactionAttr, transaction);
   
   return objydata::createReference(object);

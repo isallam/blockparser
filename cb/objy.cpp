@@ -59,7 +59,6 @@ struct ObjyDump : public Callback {
   optparse::OptionParser parser;
   ObjyAccess objyAccess;
 
-  bool dumpToFiles;
   bool enoughProcessing;
 
   // cached objects
@@ -136,7 +135,6 @@ struct ObjyDump : public Callback {
       return 1;
     }
 
-    dumpToFiles = false;
     enoughProcessing = false;
 
     static uint64_t sz = 32 * 1000 * 1000;
@@ -195,20 +193,6 @@ struct ObjyDump : public Callback {
     // id BIGINT PRIMARY KEY
     // hash BINARY(32)
     // time BIGINT
-    if (dumpToFiles)
-      fprintf(objySimFile,
-            "Block(ID:%" PRIu64 ", "
-            "VERSION:%" PRIu64 ","
-            "PrevBlockHash:%s,"
-            "BlockMerkleRoot:%s,"
-            "TIME:%" PRIu64 ","
-            "BlockHash:%s)\n",
-            blkID,
-            (uint64_t) version,
-            bufPrevBlockHash,
-            bufBlockMerkleRoot,
-            (uint64_t) blkTime,
-            bufBlockHash);
 
     if (currentBlock)
       previousBlock = currentBlock;
@@ -261,15 +245,6 @@ struct ObjyDump : public Callback {
     currentTrxInValue = 0;
     currentTrxOutValue = 0;
     
-    if (dumpToFiles)
-      fprintf(objySimFile,
-            "  Trx(TXID:%" PRIu64 ", "
-            "BLKID:%" PRIu64 ", "
-            "HASH:%s)\n",
-            ++txID,
-            blkID,
-            buf);
-
     uint8_t *key = allocHash256();
     memcpy(key, hash, kSHA256ByteSize);
 
@@ -285,10 +260,6 @@ struct ObjyDump : public Callback {
           const uint8_t *p
           ) {
     LOAD(uint32_t, lockTime, p);
-    if (dumpToFiles)
-      fprintf(objySimFile,
-            "  EndTX(    lockTime = %" PRIu32 "\n",
-            (uint32_t) lockTime);
     // update TrxInValue and TrxOutValue
     objyAccess.updateTransactionValues(currentTransaction, 
                     currentTrxInValue, currentTrxOutValue);
@@ -322,63 +293,74 @@ struct ObjyDump : public Callback {
     isCoinBase = (0 == memcmp(gNullHash.v, upTXHash.v, sizeof (gNullHash)));
     // later.
     if (isCoinBase) {
-      //            uint64_t value = getBaseReward(currBlock);
-      //            printf("%sisCoinBase = true\n", spaces);
-      //            printf(
-      //                "%svalue = %" PRIu64 " # %.08f\n",
-      //                spaces,
-      //                value,
-      //                satoshisToNormaForm(value)
-      //            );
-      //            printf("%scoinBase = '\n", spaces);
-      //            push();
-      //                canonicalHexDump(
-      //                    p,
-      //                    inputScriptSize,
-      //                    (const char *)spaces
-      //                );
-      //            pop();
-      //            printf("%s'\n", spaces);
+      uint64_t reward = getBaseReward(blkID);
+      //canonicalHexDump(p, inputScriptSize, "        ");
+      currentTrxInValue += reward;
+
+//    size_t size = kSHA256ByteSize;
+//    uint8_t* bufUpTxHash = (uint8_t*) alloca(2 * size + 1);
+//    toHex(bufUpTxHash, upTXHash.v);
+
+      ooId upTrxRef;
+//
+//    if (!isCoinBase) {
+//      TrxMap::iterator val = trxMap.find(upTXHash.v);
+//      if (trxMap.end() == val) {
+//        printf("trxMap size:%ld\n", trxMap.size());
+//        //              TrxMap::iterator itr = trxMap.begin();
+//        //              while (itr != trxMap.end())
+//        //              {
+//        //                printf("... key:'%s' >> val:'%ld'\n", itr->first, 
+//        //                        itr->second.identifier().get<objy::uint_64>());
+//        //                itr++;
+//        //              }
+//        printf("unconnected input, upTXHash:%s\n", bufUpTxHash);
+//      } else {
+//        //printf(" >>> FOUND upTrxRef\n");
+//        upTrxRef = val->second;
+//      }
+//    }
+//
+      objydata::Reference input = objyAccess.createInput(inputID, NULL, upTrxRef,
+              isCoinBase, currentTransaction);
+      objyAccess.addInputToTransaction(input, currentTransaction);
     }
-
-    size_t size = kSHA256ByteSize;
-    uint8_t* bufUpTxHash = (uint8_t*) alloca(2 * size + 1);
-    toHex(bufUpTxHash, upTXHash.v);
-
-    if (dumpToFiles)
-      fprintf(objySimFile,
-            "    Input(InputID:%" PRIu64 ", "
-            "UpTxHash:%s, "
-            "UpOutputIndex:%" PRIu64 ", "
-            "IsCoinBase:%d)\n",
-            inputID,
-            bufUpTxHash,
-            (uint64_t) upOutputIndex,
-            isCoinBase);
-    ooId upTrxRef;
-
-    if (!isCoinBase) {
-      TrxMap::iterator val = trxMap.find(upTXHash.v);
-      if (trxMap.end() == val) {
-        printf("trxMap size:%ld\n", trxMap.size());
-        //              TrxMap::iterator itr = trxMap.begin();
-        //              while (itr != trxMap.end())
-        //              {
-        //                printf("... key:'%s' >> val:'%ld'\n", itr->first, 
-        //                        itr->second.identifier().get<objy::uint_64>());
-        //                itr++;
-        //              }
-        printf("unconnected input, upTXHash:%s\n", bufUpTxHash);
-      } else {
-        //printf(" >>> FOUND upTrxRef\n");
-        upTrxRef = val->second;
-      }
-    }
-
-    objydata::Reference input = objyAccess.createInput(inputID, bufUpTxHash, upTrxRef,
-            isCoinBase, currentTransaction);
 
   }
+  
+    virtual void edge(
+        uint64_t      value,
+        const uint8_t *upTXHash,
+        uint64_t      outputIndex,
+        const uint8_t *outputScript,
+        uint64_t      outputScriptSize,
+        const uint8_t *downTXHash,
+        uint64_t      inputIndex,
+        const uint8_t *inputScript,
+        uint64_t      inputScriptSize
+    ) {
+        // this is called when there is input (not generated) that connect to output
+        uint8_t buf[1 + 2*kSHA256ByteSize];
+        toHex(buf, upTXHash);
+        currentTrxInValue += value;
+
+        ooId upTrxRef;
+
+        TrxMap::iterator val = trxMap.find(upTXHash);
+        if (trxMap.end() == val) {
+           printf("trxMap size:%ld\n", trxMap.size());
+           printf("unconnected input, upTXHash:%s\n", buf);
+         } else {
+           //printf(" >>> FOUND upTrxRef\n");
+           upTrxRef = val->second;
+         }
+
+        objydata::Reference input = objyAccess.createInput(inputIndex, buf, upTrxRef,
+                false, currentTransaction);
+
+        objyAccess.addInputToTransaction(input, currentTransaction);
+   }
+  
   // Called when at the end of a TX input
 
   virtual void endInput(
@@ -436,100 +418,23 @@ struct ObjyDump : public Callback {
     // value BIGINT
     // txID BIGINT
     // offset INT
-    if (dumpToFiles)
-      fprintf(
-            objySimFile,
-            "    Output(ID:%" PRIu64 ", "
-            "Address:%s, "
-            "Value:%" PRIu64 ", "
-            "TxID:%" PRIu64 ", "
-            "Index:%" PRIu32 ")\n"
-            ,
-            outputID,
-            address,
-            value,
-            txID,
-            (uint32_t) outputIndex
-            );
 
-    objydata::Reference output = objyAccess.createOutput(outputID, address,
+    currentTrxOutValue += value;
+    objydata::Reference output = objyAccess.createOutput(outputIndex, address,
             addressRef, value, currentTransaction);
     objyAccess.addOutputToTransaction(output, currentTransaction);
 
-    uint32_t oi = outputIndex;
-    uint8_t *h = allocHash256();
-    memcpy(h, txHash, kSHA256ByteSize);
+    //uint32_t oi = outputIndex;
+    //uint8_t *h = allocHash256();
+    //memcpy(h, txHash, kSHA256ByteSize);
 
-    uintptr_t ih = reinterpret_cast<uintptr_t> (h);
-    uint32_t *h32 = reinterpret_cast<uint32_t*> (ih);
-    h32[0] ^= oi;
+    //uintptr_t ih = reinterpret_cast<uintptr_t> (h);
+    //uint32_t *h32 = reinterpret_cast<uint32_t*> (ih);
+    //h32[0] ^= oi;
 
     //outputMap[h] = outputID++;
     outputID++;
   }
-
-  //    virtual void edge(
-  //        uint64_t      value,
-  //        const uint8_t *upTXHash,
-  //        uint64_t      outputIndex,
-  //        const uint8_t *outputScript,
-  //        uint64_t      outputScriptSize,
-  //        const uint8_t *downTXHash,
-  //        uint64_t      inputIndex,
-  //        const uint8_t *inputScript,
-  //        uint64_t      inputScriptSize
-  //    ) {
-  //        uint256_t h;
-  //        uint32_t oi = outputIndex;
-  //        memcpy(h.v, upTXHash, kSHA256ByteSize);
-  //
-  //        uintptr_t ih = reinterpret_cast<uintptr_t>(h.v);
-  //        uint32_t *h32 = reinterpret_cast<uint32_t*>(ih);
-  //        h32[0] ^= oi;
-  //
-  //        OutputMap::iterator src = outputMap.find(h.v);
-  //        if(outputMap.end()==src) {
-  //            errFatal("unconnected input");
-  //        }
-  //
-  //        size_t size = kSHA256ByteSize;
-  //        uint8_t* bufUpTxHash = (uint8_t*)alloca(2*size + 1);
-  //        if (upTXHash != NULL)
-  //          toHex(bufUpTxHash, upTXHash);
-  //        else
-  //          *bufUpTxHash = '\n';
-  //        uint8_t* bufDownTxHash = (uint8_t*)alloca(2*size + 1);
-  //        toHex(bufDownTxHash, downTXHash);
-  //
-  //        // id BIGINT PRIMARY KEY
-  //        // outputID BIGINT
-  //        // txID BIGINT
-  //        // offset INT
-  //        if (dumpToFiles)
-  //          fprintf(
-  //            objyEdgeSimFile,
-  //            "Edge(InputId:%" PRIu64 ", "
-  //            "OutputId:%" PRIu64 ", "
-  //            "TxId:%" PRIu64 ", "
-  //            "InputIndex:%" PRIu32 ", "
-  //            //"Value:%" PRIu64 " # %.08f, "
-  //            "Value: %" PRIu64 ", "
-  //            "sourceTXOutputIndex:%d, "
-  //            "sourceTXHash:%s, "
-  //            "downTxHash:%s"
-  //            ")\n"
-  //            ,
-  //            inputID,
-  //            src->second,
-  //            txID,
-  //            (uint32_t)inputIndex,
-  //            //satoshisToNormaForm(value),
-  //            value,
-  //            (int)outputIndex,
-  //            bufUpTxHash,
-  //            bufDownTxHash
-  //        );
-  //    }
 
   virtual void wrapup() {
     fclose(objySimFile);
