@@ -497,11 +497,12 @@ static void parseLongestChain() {
         uint64_t bytesSoFar =  0;
         auto blk = gNullBlock->next;
         start(blk, gMaxBlock);
+        BlockFile* currBlockFile1 = 0;
+        BlockFile* currBlockFile2 = 0;
 
         while(likely(0!=blk)) {
 
-            if(0==(blk->height % 10)) {
-   
+            if(0==(blk->height % 100)) {
                 auto now = Timer::usecs();
                 static auto last = -1.0;
                 auto elapsedSinceLastTime = now - last;
@@ -530,7 +531,49 @@ static void parseLongestChain() {
             }
 
             bytesSoFar += blk->chunk->getSize();
+            if (!currBlockFile2)
+            {
+              currBlockFile2 = const_cast<BlockFile*>(blk->chunk->getBlockFile());
+              printf("currBlockFile->name: %s\n", currBlockFile2->name.c_str());
+            }
+            else if (currBlockFile2->name.compare(blk->chunk->getBlockFile()->name) < 0)
+            {
+              if (!currBlockFile1)
+              {
+                currBlockFile1 = currBlockFile2;
+                currBlockFile2 = const_cast<BlockFile*>(blk->chunk->getBlockFile());
+                printf("currBlockFile->name: %s\n", currBlockFile2->name.c_str());
+              }
+              else {
+                // close currBlockFile1 and shift references
+                // different block file so we'll close currBlockFile1.
+                /*** close the file resources*/
+                if (currBlockFile1->fd != -1)
+                {
+                  printf("closing file %s\n", currBlockFile1->name.c_str());
+                  auto r = close(currBlockFile1->fd);
+                  if(r<0) {
+                      sysErr(
+                          "(1) failed to close block chain file %s",
+                          currBlockFile1->name.c_str()
+                      );
+                  }
+                  else {
+                    currBlockFile1->fd = -1;
+                    currBlockFile1 = currBlockFile2;
+                    currBlockFile2 = const_cast<BlockFile*>(blk->chunk->getBlockFile());
+                    printf("currBlockFile->name: %s\n", currBlockFile2->name.c_str());
+                  }
+                }
+              }
+            }            
             blk = blk->next;
+//            if (blk->chunk->getBlockFile()->name.compare(currFileName) != 0)
+//            {
+//              printf("block in file: %s\n", blk->chunk->getBlockFile()->name.c_str());
+//              currFileName = blk->chunk->getBlockFile()->name;
+//            }
+            
         }
 
     fprintf(stderr, "                                                          \r");
@@ -605,7 +648,7 @@ static void findBlockParent(
     );
     if(where!=(signed)b->chunk->getOffset()) {
         sysErrFatal(
-            "failed to seek into block chain file %s",
+            "(1) failed to seek into block chain file %s",
             b->chunk->getBlockFile()->name.c_str()
         );
     }
@@ -1000,6 +1043,8 @@ static void findBlockFiles() {
 
 static void cleanBlockFiles() {
     for(const auto &blockFile : blockFiles) {
+      if (blockFile.fd != -1)
+      {
         auto r = close(blockFile.fd);
         if(r<0) {
             sysErr(
@@ -1007,6 +1052,7 @@ static void cleanBlockFiles() {
                 blockFile.name.c_str()
             );
         }
+      }
     }
 }
 

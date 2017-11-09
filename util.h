@@ -15,6 +15,7 @@
         typedef int64_t int128_t;
         typedef uint64_t uint128_t;
     #else
+        #include <fcntl.h>
         #include <unistd.h>
         typedef signed int int128_t __attribute__((mode(TI)));
         typedef unsigned int uint128_t __attribute__((mode(TI)));
@@ -114,21 +115,50 @@
         }
 
         const uint8_t *getData() const {
+          int fd = blockFile->fd;
+          // check if the file is already close
+          bool closeFilePlease = false;
+          if (fd == -1) /* we closed it */
+          {
+            //printf("Need to open file: %s\n", blockFile->name.c_str());
+            fd = open(blockFile->name.c_str(), O_RDONLY);
+            if (fd < 0) {
+              sysErrFatal(
+                  "(2) failed to open block chain file %s",
+                  blockFile->name.c_str()
+              );
+            }
+            else {
+              closeFilePlease = true;
+            }
+          }
+                                    
             if(likely(0==data)) {
-                auto where = lseek64(blockFile->fd, offset, SEEK_SET);
+                auto where = lseek64(fd, offset, SEEK_SET);
                 if(where!=(signed)offset) {
                     sysErrFatal(
-                        "failed to seek into block chain file %s",
+                        "(2) failed to seek into block chain file %s",
                         blockFile->name.c_str()
                     );
                 }
                 data = (uint8_t*)malloc(size);
 
-                auto sz = read(blockFile->fd, data, size);
+                auto sz = read(fd, data, size);
                 if(sz!=(signed)size) {
                     //fatal("can't read block");
                 }
             }
+          if (closeFilePlease)
+          {
+              //printf("closing file %s\n", blockFile->name.c_str());
+              auto r = close(fd);
+              if(r<0) {
+                  sysErr(
+                      "(2) failed to close block chain file %s",
+                      blockFile->name.c_str()
+                  );
+              }
+          }
             return data;
         }
 
