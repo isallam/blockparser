@@ -109,7 +109,7 @@ objydata::Reference ObjyAccess::createBlock(
  */
 objydata::Reference ObjyAccess::createTransaction(
         uint64_t id, uint8_t* hash, time_t blkTime,
-        objydata::Reference& block)
+        uint64_t blockId)
 {
   //cout << "... creating transaction" << endl;
 
@@ -128,8 +128,9 @@ objydata::Reference ObjyAccess::createTransaction(
   value.set(objydata::DateTime(blkTime, 0));
   classAccessor->setAttributeValue(object, TransactionTimeAttr, value);
 
-  // add block to transaction.
-  classAccessor->setReference(object, TransactionBlockAttr, block);
+  // add blockId to transaction.
+  value.set(blockId);
+  classAccessor->setAttributeValue(object, TransactionBlockIdAttr, value);
   
   return objydata::createReference(object);
 }

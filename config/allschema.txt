@@ -21,7 +21,7 @@ UPDATE SCHEMA
     m_MintTime:       DateTime,
 		m_InValue:        Integer {Encoding: Unsigned, Storage: b64}, 
 		m_OutValue:       Integer {Encoding: Unsigned, Storage: b64}, 
-		m_Block:          Reference {Referenced: Block},
+		m_BlockId:        Integer {Encoding: Unsigned, Storage: b64},
 		m_Inputs:         List {Element: Reference{Referenced: Input}, CollectionName: SegmentedArray},
 		m_Outputs:        List {Element: Reference{Referenced: Output}, CollectionName: SegmentedArray},
 		m_Tag:            Reference {Referenced: Tag}

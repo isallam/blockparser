@@ -497,8 +497,9 @@ static void parseLongestChain() {
         uint64_t bytesSoFar =  0;
         auto blk = gNullBlock->next;
         start(blk, gMaxBlock);
-        BlockFile* currBlockFile1 = 0;
-        BlockFile* currBlockFile2 = 0;
+        // we'll keep a cache of 3 references for moving targets
+        BlockFileList currBlockFileList;
+        
 
         while(likely(0!=blk)) {
 
@@ -531,39 +532,42 @@ static void parseLongestChain() {
             }
 
             bytesSoFar += blk->chunk->getSize();
-            if (!currBlockFile2)
+            
+            auto headBlockFile = currBlockFileList.head();
+            auto tailBlockFile = currBlockFileList.tail();
+            if (!headBlockFile)
             {
-              currBlockFile2 = const_cast<BlockFile*>(blk->chunk->getBlockFile());
-              printf("currBlockFile->name: %s\n", currBlockFile2->name.c_str());
-            }
-            else if (currBlockFile2->name.compare(blk->chunk->getBlockFile()->name) < 0)
-            {
-              if (!currBlockFile1)
+              if (!tailBlockFile ||
+                  (tailBlockFile->name.compare(blk->chunk->getBlockFile()->name) < 0))
               {
-                currBlockFile1 = currBlockFile2;
-                currBlockFile2 = const_cast<BlockFile*>(blk->chunk->getBlockFile());
-                printf("currBlockFile->name: %s\n", currBlockFile2->name.c_str());
+                currBlockFileList.shitUp();
+                tailBlockFile = const_cast<BlockFile*>(blk->chunk->getBlockFile());
+                currBlockFileList.tail(tailBlockFile);
+                printf("currBlockFile->name: %s\n", tailBlockFile->name.c_str());
               }
-              else {
-                // close currBlockFile1 and shift references
-                // different block file so we'll close currBlockFile1.
-                /*** close the file resources*/
-                if (currBlockFile1->fd != -1)
-                {
-                  printf("closing file %s\n", currBlockFile1->name.c_str());
-                  auto r = close(currBlockFile1->fd);
-                  if(r<0) {
-                      sysErr(
-                          "(1) failed to close block chain file %s",
-                          currBlockFile1->name.c_str()
-                      );
-                  }
-                  else {
-                    currBlockFile1->fd = -1;
-                    currBlockFile1 = currBlockFile2;
-                    currBlockFile2 = const_cast<BlockFile*>(blk->chunk->getBlockFile());
-                    printf("currBlockFile->name: %s\n", currBlockFile2->name.c_str());
-                  }
+            }
+            else if (tailBlockFile->name.compare(blk->chunk->getBlockFile()->name) < 0)
+            {
+              // close head BlockFile and shift references
+              // different block file so we'll close currBlockFile1.
+              /*** close the file resources*/
+              if (headBlockFile->fd != -1)
+              {
+                printf("closing file %s\n", headBlockFile->name.c_str());
+                auto r = close(headBlockFile->fd);
+                if(r<0) {
+                    sysErr(
+                        "(1) failed to close block chain file %s",
+                        headBlockFile->name.c_str()
+                    );
+                }
+                else {
+                  headBlockFile->fd = -1;
+                  currBlockFileList.shitUp();
+                  tailBlockFile = currBlockFileList.tail();
+                  tailBlockFile = const_cast<BlockFile*>(blk->chunk->getBlockFile());
+                  currBlockFileList.tail(tailBlockFile);
+                  printf("currBlockFile->name: %s\n", tailBlockFile->name.c_str());
                 }
               }
             }            

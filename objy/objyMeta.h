@@ -46,7 +46,7 @@ const char* TransactionHashAttr     = "m_Hash";
 const char* TransactionTimeAttr     = "m_MintTime";
 const char* TransactionInValueAttr  = "m_InValue";
 const char* TransactionOutValueAttr = "m_OutValue";
-const char* TransactionBlockAttr    = "m_Block";
+const char* TransactionBlockIdAttr  = "m_BlockId";
 const char* TransactionInputsAttr   = "m_Inputs";
 const char* TransactionOutputsAttr  = "m_Outputs";
 

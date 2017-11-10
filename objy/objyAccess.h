@@ -190,7 +190,7 @@ public:
         uint64_t id, int version, uint8_t* prevBlockHash, uint8_t* blockMerkleRoot, 
         long blkTime, uint8_t* hash, objydata::Reference& prevBlock);
   objydata::Reference createTransaction(uint64_t id, uint8_t* hash, long blkTime,
-                        objydata::Reference& block);
+                        uint64_t blockId);
   objydata::Reference createInput(
           uint64_t id, uint8_t* upTxHash, ooId& upTrxRef, bool isCoinBase,
           objydata::Reference& transaction);

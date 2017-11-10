@@ -205,6 +205,43 @@
         }
     };
 
+    const int _listSize = 3;
+    struct BlockFileList {
+      
+      BlockFile* _list[_listSize];
+      BlockFileList() {
+        memset(_list, 0, sizeof(_list));
+      }
+      
+      BlockFile* spotAvailable() {
+        BlockFile* retValue = 0;
+        for(int i=_listSize-1; i <0; i++)
+        {
+           if (!_list[i]) {
+             retValue = _list[i];
+             break;
+           } 
+        }
+        return retValue;
+      }
+      BlockFile*& head() {
+        return(_list[0]);
+      }
+      BlockFile*& tail() {
+        return(_list[_listSize-1]);
+      }
+      void tail(BlockFile*& blockFile) {
+        _list[_listSize-1] = blockFile;
+      }
+      void shitUp() {
+        for (int i = 1; i < _listSize; i++)
+        {
+          _list[i-1] = _list[i];
+        }
+      }
+      
+    };
+    
     #if defined NO_GOOGLE_MAP
 
         #include <unordered_map>

@@ -202,20 +202,8 @@ struct ObjyDump : public Callback {
 
     int commitEvery = 50000; // commit every 100K transactions once we reach
                               // a block boundary.
-//    if (b->height > 100000)
-//      commitEvery = 500;
-//    if (b->height > 200000)
-//      commitEvery = 100;
 
-//    if (0 == (b->height) % commitEvery) {
     if ((txID / commitEvery) > numCommits) {
-//      fprintf(
-//              stderr,
-//              "block=%8" PRIu64 " "
-//              "num_transactions=%8" PRIu64 "\r",
-//              b->height,
-//              txID
-//              );
       trx->commit();
       numCommits++;
       auto now = Timer::usecs();
@@ -255,7 +243,7 @@ struct ObjyDump : public Callback {
     memcpy(key, hash, kSHA256ByteSize);
 
     currentTransaction = objyAccess.createTransaction(txID, buf, currentBlockTime,
-            currentBlock);
+            blkID);
     trxMap[key] = objydata::oidFor(currentTransaction);
 
     objyAccess.addTransactionToBlock(currentTransaction, currentBlock);
