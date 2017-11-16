@@ -112,6 +112,13 @@ class ClassAccessor {
       setReference(instance, attribute, value);
     }
 
+    void addList(objy::data::Object instance,
+            const string& attributeName, std::list<ooId> oidList) const
+    {
+      const objy::data::Attribute& attribute = this->getAttribute(attributeName);
+      addList(instance, attribute, oidList);
+    }
+
   private:
     void setAttributeValue(objy::data::Object instance,
             const objy::data::Attribute& attribute, const objy::data::Variable& value) const
@@ -147,6 +154,37 @@ class ClassAccessor {
       }      
     }
 
+    void addList(objy::data::Object instance,
+            const objy::data::Attribute& attribute, std::list<ooId> oidList) const
+    {
+      objy::data::Variable varValue;
+      instance.attributeValue(attribute, varValue);
+
+      objy::data::LogicalType::type attrLogicalType =
+              attribute.attributeValueSpecification()->logicalType();
+
+      if (attrLogicalType == objy::data::LogicalType::List) {
+        objy::data::List list = varValue.get<objy::data::List>();
+        std::list<ooId>::iterator listItr = oidList.begin();
+        while (listItr != oidList.end())
+        {
+          list.append(objydata::referenceFor(*listItr));
+          listItr++;
+        }
+      } else if (attrLogicalType == objy::data::LogicalType::Map) {
+        objy::data::Map map = varValue.get<objy::data::Map>();
+        std::list<ooId>::iterator listItr = oidList.begin();
+        while (listItr != oidList.end())
+        {
+          addReferenceIfDoesnotExist(map, objydata::referenceFor(*listItr));
+          listItr++;
+        }
+      } else {
+        std::cerr << "Illegal attribute type " << objy::data::LogicalType::toString(attrLogicalType)
+                << " for Instance value." << std::endl;
+      }      
+    }
+    
     void addReferenceIfDoesnotExist(objy::data::Map& map,
             const objy::data::Reference objRef) const {
       // set the key and value in the map from the call object.... 
@@ -189,22 +227,30 @@ public:
   objydata::Reference createBlock(
         uint64_t id, int version, uint8_t* prevBlockHash, uint8_t* blockMerkleRoot, 
         long blkTime, uint8_t* hash, objydata::Reference& prevBlock);
+  objydata::Reference createGenTransaction(uint64_t id, uint8_t* hash, long blkTime,
+                        uint64_t blockId);
   objydata::Reference createTransaction(uint64_t id, uint8_t* hash, long blkTime,
                         uint64_t blockId);
-  objydata::Reference createInput(
-          uint64_t id, uint8_t* upTxHash, ooId& upTrxRef, bool isCoinBase,
-          objydata::Reference& transaction);
+//  objydata::Reference createInput(
+//          uint64_t id, uint8_t* upTxHash, ooId& upTrxRef, bool isCoinBase,
+//          objydata::Reference& transaction);
   objydata::Reference createOutput(uint64_t id, 
           uint8_t* address, objydata::Reference& addressRef, 
-          uint64_t trxValue, objydata::Reference& transaction);
+          double trxValue, objydata::Reference& transaction);
   objydata::Reference createAddress(uint8_t* hash);
 
+  bool addInputList(objydata::Reference& transaction, std::list<ooId> inputList);
   bool addTransactionToBlock(objydata::Reference& transaction, objydata::Reference& block);
-  bool addInputToTransaction(objydata::Reference& input, objydata::Reference& transaction);
+//  bool addInputToTransaction(objydata::Reference& input, objydata::Reference& transaction);
   bool addOutputToTransaction(objydata::Reference& output, objydata::Reference& transaction);
   
-  bool updateTransactionValues(objydata::Reference& transaction, uint64_t trxInValue, uint64_t trxOutValue);
+  bool updateTransactionValues(objydata::Reference& transaction, 
+                        double trxInValue, double trxOutValue);
 
+private:
+  objydata::Reference setTransactionAttributes(ClassAccessor* classAccessor,
+                        objydata::Object& object, uint64_t id, uint8_t* hash, 
+                        long blkTime, uint64_t blockId);
 private:
 
   ClassAccessorMap      _classProxyMap;

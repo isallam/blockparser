@@ -20,56 +20,65 @@ namespace objydata = objy::data;
 
 
 // class names
-const char* BlockClassName        = "Block";
-const char* TransactionClassName  = "Transaction";
-const char* InputClassName        = "Input";
-const char* OutputClassName       = "Output";
-const char* AddressClassName      = "Address";
-const char* TagClassName          = "Tag";
+const char* BlockClassName           = "Block";
+const char* TransactionClassName     = "Transaction";
+const char* GenTransactionClassName  = "GenTransaction";
+//const char* InputClassName           = "Input";
+const char* OutputClassName          = "Output";
+const char* AddressClassName         = "Address";
+const char* TagClassName             = "Tag";
 
 
-const char* TagRefAttr            = "m_Tag";
+const char* TagRefAttr              = "_tag";
 
-const char* BlockIdAttr             = "m_Id";
-const char* BlockVersionAttr        = "m_Version";
-const char* BlockTimeAttr           = "m_Time"; 
-const char* BlockHashAttr           = "m_Hash";
-const char* BlockPrevBlockHashAttr  = "m_PrevBlockHash";
-const char* BlockMerkleRootHashAttr = "m_MerkleRootHash";
-const char* BlockPrevBlockAttr      = "m_PrevBlock";
-const char* BlockNextBlockAttr      = "m_NextBlock";
-const char* BlockTransactionsAttr   = "m_Transactions";
-
-
-const char* TransactionIdAttr       = "m_Id";
-const char* TransactionHashAttr     = "m_Hash";
-const char* TransactionTimeAttr     = "m_MintTime";
-const char* TransactionInValueAttr  = "m_InValue";
-const char* TransactionOutValueAttr = "m_OutValue";
-const char* TransactionBlockIdAttr  = "m_BlockId";
-const char* TransactionInputsAttr   = "m_Inputs";
-const char* TransactionOutputsAttr  = "m_Outputs";
+const char* BlockIdAttr             = "_id";
+const char* BlockVersionAttr        = "_version";
+const char* BlockTimeAttr           = "_time"; 
+const char* BlockHashAttr           = "_hash";
+const char* BlockPrevBlockHashAttr  = "_prevBlockHash";
+const char* BlockMerkleRootHashAttr = "_merkleRootHash";
+const char* BlockPrevBlockAttr      = "_prevBlock";
+const char* BlockNextBlockAttr      = "_nextBlock";
+const char* BlockTransactionsAttr   = "_transactions";
 
 
-const char* InputIdAttr          = "m_Id";
-const char* InputIsCoinBaseAttr  = "m_IsCoinBase";
-const char* InputUpTxHashAttr    = "m_UpTxHash"; 
-const char* InputUpTxAttr        = "m_UpTx";
-const char* InputTransactionAttr = "m_Transaction";
+const char* TransactionIdAttr         = "_id";
+const char* TransactionHashAttr       = "_hash";
+const char* TransactionTimeAttr       = "_mintTime";
+const char* TransactionInValueAttr    = "_inValue";
+const char* TransactionOutValueAttr   = "_outValue";
+const char* TransactionBlockIdAttr    = "_blockId";
+const char* TransactionChildAttr      = "_child";
+const char* TransactionNumOutputsAttr = "_numOutputs";
+const char* TransactionOutputsAttr    = "_outputs";
+
+const char* TransactionNumParentsAttr = "_numParents";
+const char* TransactionParentsAttr    = "_parents";
+
+const char* TransactionIsCoinBaseAttr = "_isCoinBase";
 
 
-const char* OutputIdAttr          = "m_Id";
-const char* OutputValueAttr       = "m_Value";
-const char* OutputAddressHashAttr = "m_AddressHash"; 
-const char* OutputAddressAttr     = "m_Address";
-const char* OutputTransactionAttr = "m_Transaction";
+//const char* InputIdAttr          = "m_Id";
+//const char* InputIsCoinBaseAttr  = "m_IsCoinBase";
+//const char* InputUpTxHashAttr    = "m_UpTxHash"; 
+//const char* InputUpTxAttr        = "m_UpTx";
+//const char* InputTransactionAttr = "m_Transaction";
+//
+
+const char* OutputIdAttr          = "_id";
+const char* OutputValueAttr       = "_value";
+const char* OutputAddressHashAttr = "_addressHash"; 
+const char* OutputNumAddressesAttr= "_numAddresses";
+const char* OutputAddressAttr     = "_address";
+const char* OutputTransactionAttr = "_transaction";
 
 
-const char* AddressHashAttr    = "m_Hash";
-const char* AddressOutputsAttr = "m_Outputs";
+const char* AddressHashAttr       = "_hash";
+const char* AddressNumOutputsAttr = "_numOutputs";
+const char* AddressOutputsAttr    = "_outputs";
 
-const char* TagLabelAttr        = "m_Label";
-const char* TagObjectAttr       = "m_Ref";
+const char* TagLabelAttr        = "_label";
+const char* TagObjectAttr       = "_ref";
 
 
 #endif /* OBJYMETA_H */
