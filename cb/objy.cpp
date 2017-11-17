@@ -46,10 +46,11 @@ struct ObjyDump : public Callback {
 
   uint64_t blkID;
   uint64_t trxID;
-  uint8_t* trxHash;
+  uint8_t trxHash[2 * kSHA256ByteSize + 1];
   uint64_t inputID;
   uint64_t outputID;
   uint64_t numCommits;
+      
 
   bool isCoinBase;
   int64_t cutoffBlock;
@@ -113,11 +114,9 @@ struct ObjyDump : public Callback {
           ) {
     blkID = 0;
     trxID = 0;
-    trxHash = allocHash256();
     inputID = 0;
     outputID = 0;
-    numCommits = 0;
-
+    numCommits = 0;  
 
     // TBD... boot file is hard coded for now, will be params later
     fdname = "../data/bitcoin.boot";
@@ -237,16 +236,18 @@ struct ObjyDump : public Callback {
     // id BIGINT PRIMARY KEY
     // hash BINARY(32)
     // blockID BIGINT
-    size_t size = kSHA256ByteSize;
-    uint8_t* buf = (uint8_t*) alloca(2 * size + 1);
-    toHex(buf, hash);
-
+    
+    //size_t size = kSHA256ByteSize;
+    //uint8_t* buf = (uint8_t*) alloca(2 * size + 1);
+    //toHex(buf, hash);
+    toHex(trxHash, hash);
+    
     currentTrxInValue = 0;
     currentTrxOutValue = 0;
     
-    memcpy(trxHash, hash, kSHA256ByteSize);
-//    uint8_t *key = allocHash256();
-//    memcpy(key, hash, kSHA256ByteSize);
+    //memcpy(trxHash, buf, kSHA256ByteSize);
+//   uint8_t *key = allocHash256();
+//   memcpy(key, hash, kSHA256ByteSize);
 //
 //    currentTransaction = objyAccess.createTransaction(trxID, trxHash, currentBlockTime,
 //            blkID);
@@ -321,7 +322,8 @@ struct ObjyDump : public Callback {
     {
       uint8_t *key = allocHash256();
       memcpy(key, trxHash, kSHA256ByteSize);
-
+      //printf("trxHash as    :%s\n", trxHash);
+      
       if (isCoinBase) {
         currentTransaction = objyAccess.createGenTransaction(trxID, trxHash, 
                 currentBlockTime, blkID);
@@ -329,6 +331,7 @@ struct ObjyDump : public Callback {
         currentTransaction = objyAccess.createTransaction(trxID, trxHash, 
                 currentBlockTime, blkID);
       }
+      //printf("trxHash as key:%s\n", key);
       trxMap[key] = objydata::oidFor(currentTransaction);
     }
 //      objydata::Reference input = objyAccess.createInput(inputID, NULL, upTrxRef,
@@ -351,11 +354,13 @@ struct ObjyDump : public Callback {
         // this is called when there is input (not generated) that connect to output
         uint8_t buf[1 + 2*kSHA256ByteSize];
         toHex(buf, upTXHash);
+//        printf("upTXHash toHex(): %s\n", buf);
+//        printf("upTXHash mapKey : %s\n", lookupKey);
         currentTrxInValue += value;
 
         ooId upTrxRef;
 
-        TrxMap::iterator val = trxMap.find(upTXHash);
+        TrxMap::iterator val = trxMap.find(buf);
         if (trxMap.end() == val) {
            printf("trxMap size:%ld\n", trxMap.size());
            printf("unconnected input, upTXHash:%s\n", buf);

@@ -73,9 +73,10 @@ const char* OutputAddressAttr     = "_address";
 const char* OutputTransactionAttr = "_transaction";
 
 
-const char* AddressHashAttr       = "_hash";
-const char* AddressNumOutputsAttr = "_numOutputs";
-const char* AddressOutputsAttr    = "_outputs";
+const char* AddressHashAttr         = "_hash";
+const char* AddressNumOutputsAttr   = "_numOutputs";
+const char* AddressOutputsAttr      = "_outputs";
+const char* AddressOutputsValueAttr = "_outputsValue";
 
 const char* TagLabelAttr        = "_label";
 const char* TagObjectAttr       = "_ref";

@@ -243,8 +243,13 @@ objydata::Reference ObjyAccess::createOutput(
 
     // add output to address
     ClassAccessor* addressClassAccessor = this->getClassProxy(AddressClassName);
-    addressClassAccessor->setReference(addressRef.referencedObject(), 
+    objydata::Object addressObj = addressRef.referencedObject();
+    addressClassAccessor->setReference(addressObj, 
                             AddressOutputsAttr, objectRef);
+    addressClassAccessor->incUInt64AttributeValue(addressObj,
+                            AddressNumOutputsAttr);
+    addressClassAccessor->addToFloat64AttributeValue(addressObj,
+                            AddressOutputsValueAttr, trxValue);
   }
   
   classAccessor->setReference(object, OutputTransactionAttr, transaction);
@@ -319,8 +324,12 @@ bool ObjyAccess::addInputList(objydata::Reference& transaction,
 
 bool ObjyAccess::addOutputToTransaction(objydata::Reference& output, objydata::Reference& transaction)
 { 
+  objydata::Object trxObj = transaction.referencedObject();
+
   ClassAccessor* classAccessor = this->getClassProxy(TransactionClassName);
-  classAccessor->setReference(transaction.referencedObject(), TransactionOutputsAttr, output);
+  classAccessor->setReference(trxObj, TransactionOutputsAttr, output);
+
+  classAccessor->incUInt64AttributeValue(trxObj, TransactionNumOutputsAttr);
 
   return true;
 }
@@ -331,13 +340,13 @@ bool ObjyAccess::updateTransactionValues(objydata::Reference& transaction,
   objydata::Object trxObj = transaction.referencedObject();
   
   ClassAccessor* classAccessor = this->getClassProxy(TransactionClassName);
+  
   objydata::Variable value;
   
   value.set(trxInValue);
-  classAccessor->setAttributeValue(trxObj, 
-          TransactionInValueAttr, value);
+  classAccessor->setAttributeValue(trxObj, TransactionInValueAttr, value);
+  
   value.set(trxOutValue);
-  classAccessor->setAttributeValue(trxObj, 
-          TransactionOutValueAttr, value);
+  classAccessor->setAttributeValue(trxObj, TransactionOutValueAttr, value);
   
 }

@@ -92,6 +92,21 @@ class ClassAccessor {
         setAttributeValue(instance, attribute, value);
     }
 
+    void incUInt64AttributeValue(objy::data::Object instance, const string& attributeName) const
+    {
+      const objy::data::Attribute& attribute = this->getAttribute(attributeName);
+      if (!attribute.isNull())
+        incUInt64AttributeValue(instance, attribute);
+    }
+
+    void addToFloat64AttributeValue(objy::data::Object instance, 
+            const string& attributeName, double value) const
+    {
+      const objy::data::Attribute& attribute = this->getAttribute(attributeName);
+      if (!attribute.isNull())
+        addToFloat64AttributeValue(instance, attribute, value);
+    }
+
     void setReference(objy::data::Object instance,
             const string& attributeName, const objy::data::Reference value) const
     {
@@ -127,6 +142,32 @@ class ClassAccessor {
       instance.attributeValue(attribute, varValue);
       //varValue.set(value);
       varValue = value;
+    }
+
+    /* 
+     * Note that the variable we are incrementing is of type 'uint64_t' 
+     * Hence we named the function specifically to show that.
+     * A better generic impl should check the type and get the value accordingly.
+     */
+    void incUInt64AttributeValue(objy::data::Object instance,
+            const objy::data::Attribute& attribute) const
+    {
+      objy::data::Variable varValue;
+      instance.attributeValue(attribute, varValue);
+      varValue.set(varValue.get<uint64_t>() + 1);
+    }
+
+    /* 
+     * Note that the variable we are adding is of type 'double' 
+     * Hence we named the function specifically to show that.
+     * A better generic impl should check the type and get the value accordingly.
+     */
+    void addToFloat64AttributeValue(objy::data::Object instance,
+            const objy::data::Attribute& attribute, double value) const
+    {
+      objy::data::Variable varValue;
+      instance.attributeValue(attribute, varValue);
+      varValue.set(varValue.get<double>() + value);
     }
 
     // NOTE: this version doesn't check if a reference exist in a list before

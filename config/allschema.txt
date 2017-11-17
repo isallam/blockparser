@@ -10,7 +10,6 @@ UPDATE SCHEMA
     _merkleRootHash:  String {Encoding: Utf8}, 
     _prevBlock:       Reference {Referenced: Block},
     _nextBlock:       Reference {Referenced: Block},
-    _numTransactions: Integer {Encoding: Unsigned, Storage: b64},
     _transactions:    List {Element: Reference{Referenced: Transaction}, CollectionName: SegmentedArray},
     _tag:             Reference {Referenced: Tag}
   }
@@ -40,7 +39,6 @@ UPDATE SCHEMA
   {
     _id:             Integer {Encoding: Unsigned, Storage: b64}, 
     _transaction:    Reference {Referenced: Transaction},
-    _numAddresses:   Integer {Encoding: Unsigned, Storage: b64},
     _address:        Reference {Referenced: Address},
     _addressHash:    String {Encoding: Utf8},
     _value:          Float {Encoding: IEEE, Storage: b64}, 
@@ -52,6 +50,7 @@ UPDATE SCHEMA
     _hash:           String {Encoding: Utf8},
     _numOutputs:     Integer {Encoding: Unsigned, Storage: b64},
     _outputs:        List {Element: Reference{Referenced: Output}, CollectionName: SegmentedArray},
+    _outputsValue:   Float {Encoding: IEEE, Storage: b64}, 
     _tag:            Reference {Referenced: Tag}
   }
 
