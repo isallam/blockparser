@@ -23,8 +23,9 @@ UPDATE SCHEMA
     _outValue:       Float {Encoding: IEEE, Storage: b64}, 
     _blockId:        Integer {Encoding: Unsigned, Storage: b64},
     _numParents:     Integer {Encoding: Unsigned, Storage: b64},
+    _numChildren:    Integer {Encoding: Unsigned, Storage: b64},
     _parents:        List {Element: Reference{Referenced: Transaction}, CollectionName: SegmentedArray},
-    _child:          Reference {Referenced: Transaction},
+    _children:       List {Element: Reference{Referenced: Transaction}, CollectionName: SegmentedArray},
     _numOutputs:     Integer {Encoding: Unsigned, Storage: b64},
     _outputs:        List {Element: Reference{Referenced: Output}, CollectionName: SegmentedArray},
     _tag:            Reference {Referenced: Tag}

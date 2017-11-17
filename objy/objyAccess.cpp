@@ -314,8 +314,9 @@ bool ObjyAccess::addInputList(objydata::Reference& transaction,
   {
     objydata::Object object = objydata::objectFor(*listItr);
     classAccessor = this->getClassProxy(object.getClass().name());
-    classAccessor->setReference(object, TransactionChildAttr, 
+    classAccessor->setReference(object, TransactionChildrenAttr, 
                       transaction);
+    classAccessor->incUInt64AttributeValue(object, TransactionNumChildrenAttr);
     listItr++;
   }
           

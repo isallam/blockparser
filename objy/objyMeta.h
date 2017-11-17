@@ -48,12 +48,13 @@ const char* TransactionTimeAttr       = "_mintTime";
 const char* TransactionInValueAttr    = "_inValue";
 const char* TransactionOutValueAttr   = "_outValue";
 const char* TransactionBlockIdAttr    = "_blockId";
-const char* TransactionChildAttr      = "_child";
 const char* TransactionNumOutputsAttr = "_numOutputs";
 const char* TransactionOutputsAttr    = "_outputs";
 
 const char* TransactionNumParentsAttr = "_numParents";
 const char* TransactionParentsAttr    = "_parents";
+const char* TransactionNumChildrenAttr= "_numChildren";
+const char* TransactionChildrenAttr   = "_children";
 
 const char* TransactionIsCoinBaseAttr = "_isCoinBase";
 
