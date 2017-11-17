@@ -515,12 +515,12 @@ static void parseLongestChain() {
                 if((1.0 * 1000 * 1000)<elapsedSinceLastTime) {
                     fprintf(
                         stderr,
-                        "block %6d/%6d, %.2f%% done, ETA = %.2fsecs, mem = %.3f Gig           \r",
+                        "block %6d/%6d, %.2f%% done, ETA = %.2fsecs, ELAPSED %.0f secs           \r",
                         (int)blk->height,
                         (int)gMaxHeight,
                         progress*100.0,
                         secsLeft,
-                        getMem()
+                        elapsedSinceStart*1e-6
                     );
                     fflush(stderr);
                     last = now;
