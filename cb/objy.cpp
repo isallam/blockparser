@@ -255,9 +255,9 @@ struct ObjyDump : public Callback {
   virtual void endTX(
           const uint8_t *p
           ) {
-    LOAD(uint32_t, lockTime, p);
+    //LOAD(uint32_t, lockTime, p);
     // update TrxInValue and TrxOutValue
-    objyAccess.updateTransactionValues(currentTransaction, 
+    objyAccess.updateTransactionValues(currentTransaction, isCoinBase,
                     currentTrxInValue, currentTrxOutValue,
                     inputID, outputID);
     
@@ -297,29 +297,11 @@ struct ObjyDump : public Callback {
 //    uint8_t* bufUpTxHash = (uint8_t*) alloca(2 * size + 1);
 //    toHex(bufUpTxHash, upTXHash.v);
 
-      ooId upTrxRef;
+//      ooId upTrxRef;
 //
-//    if (!isCoinBase) {
-//      TrxMap::iterator val = trxMap.find(upTXHash.v);
-//      if (trxMap.end() == val) {
-//        printf("trxMap size:%ld\n", trxMap.size());
-//        //              TrxMap::iterator itr = trxMap.begin();
-//        //              while (itr != trxMap.end())
-//        //              {
-//        //                printf("... key:'%s' >> val:'%ld'\n", itr->first, 
-//        //                        itr->second.identifier().get<objy::uint_64>());
-//        //                itr++;
-//        //              }
-//        printf("unconnected input, upTXHash:%s\n", bufUpTxHash);
-//      } else {
-//        //printf(" >>> FOUND upTrxRef\n");
-//        upTrxRef = val->second;
-//      }
-//    }
-//
-      objydata::Reference input = objyAccess.createInput(inputID, NULL, upTrxRef,
-              isCoinBase, currentTransaction);
-      objyAccess.addInputToTransaction(input, currentTransaction);
+//      objydata::Reference input = objyAccess.createInput(inputID, NULL, upTrxRef,
+//              isCoinBase, currentTransaction);
+//      objyAccess.addInputToTransaction(input, currentTransaction);
     }
 
   }
@@ -352,18 +334,17 @@ struct ObjyDump : public Callback {
          }
 
         objydata::Reference input = objyAccess.createInput(inputIndex, buf, upTrxRef,
-                false, currentTransaction);
+                outputIndex, currentTransaction);
 
         objyAccess.addInputToTransaction(input, currentTransaction);
+        ++inputID;
    }
   
   // Called when at the end of a TX input
-
-  virtual void endInput(
-          const uint8_t *p
-          ) {
-    ++inputID;
-  }
+//  virtual void endInput(
+//          const uint8_t *p
+//          ) {
+//  }
 
   virtual void endOutput(
           const uint8_t *p,

@@ -118,6 +118,16 @@ class ClassAccessor {
       if (!attribute.isNull())
         incUInt64AttributeValue(instance, attribute);
     }
+ 
+    void addToUInt64AttributeValue(objy::data::Object instance, 
+            const string& attributeName, uint64_t value) const
+    {
+      const objy::data::Attribute& attribute = this->getAttribute(attributeName);
+      if (!attribute.isNull())
+        addToUInt64AttributeValue(instance, attribute, value);
+    }
+
+    
     
   private:
     void setAttributeValue(objy::data::Object instance,
@@ -177,6 +187,19 @@ class ClassAccessor {
       instance.attributeValue(attribute, varValue);
       varValue.set(varValue.get<uint64_t>() + 1);
     }
+
+    /* 
+     * Note that the variable we are adding is of type 'uint64_t' 
+     * Hence we named the function specifically to show that.
+     * A better generic impl should check the type and get the value accordingly.
+     */
+    void addToUInt64AttributeValue(objy::data::Object instance,
+            const objy::data::Attribute& attribute, uint64_t value) const
+    {
+      objy::data::Variable varValue;
+      instance.attributeValue(attribute, varValue);
+      varValue.set(varValue.get<uint64_t>() + value);
+    }
     
   private:
 
@@ -212,9 +235,9 @@ public:
   objydata::Reference createTransaction(uint64_t id, uint8_t* hash, long blkTime,
                         uint64_t blockId);
   objydata::Reference createInput(
-          uint64_t id, uint8_t* upTxHash, ooId& upTrxRef, bool isCoinBase,
+          uint64_t index, uint8_t* upTxHash, ooId& upTrxRef, uint64_t upTrxIndex, 
           objydata::Reference& transaction);
-  objydata::Reference createOutput(uint64_t id, 
+  objydata::Reference createOutput(uint64_t index, 
           uint8_t* address, objydata::Reference& addressRef, 
           uint64_t trxValue, objydata::Reference& transaction);
   objydata::Reference createAddress(uint8_t* hash);
@@ -224,7 +247,7 @@ public:
   bool addOutputToTransaction(objydata::Reference& output, objydata::Reference& transaction);
   
   bool updateTransactionValues(objydata::Reference& transaction, 
-          uint64_t trxInValue, uint64_t trxOutValue, 
+          bool isCoinBase, uint64_t trxInValue, uint64_t trxOutValue, 
           uint64_t numInputs, uint64_t numOutputs);
 
 private:

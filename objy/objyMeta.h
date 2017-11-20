@@ -44,6 +44,7 @@ const char* BlockTransactionsAttr   = "_transactions";
 const char* TransactionIdAttr         = "_id";
 const char* TransactionHashAttr       = "_hash";
 const char* TransactionTimeAttr       = "_mintTime";
+const char* TransactionIsCoinBaseAttr = "_isCoinBase";
 const char* TransactionInValueAttr    = "_inValue";
 const char* TransactionOutValueAttr   = "_outValue";
 const char* TransactionBlockIdAttr    = "_blockId";
@@ -52,15 +53,14 @@ const char* TransactionInputsAttr     = "_inputs";
 const char* TransactionNumOutputsAttr = "_numOutputs";
 const char* TransactionOutputsAttr    = "_outputs";
 
-
-const char* InputIdAttr          = "_id";
-const char* InputIsCoinBaseAttr  = "_isCoinBase";
+const char* InputIndexAttr       = "_index";
 const char* InputUpTxHashAttr    = "_upTxHash"; 
 const char* InputUpTxAttr        = "_parent";
+const char* InputUpTxIndexAttr   = "_parentIndex";
 const char* InputTransactionAttr = "_transaction";
 
 
-const char* OutputIdAttr          = "_id";
+const char* OutputIndexAttr       = "_index";
 const char* OutputValueAttr       = "_value";
 const char* OutputAddressHashAttr = "_addressHash"; 
 const char* OutputAddressAttr     = "_address";
@@ -68,6 +68,7 @@ const char* OutputTransactionAttr = "_transaction";
 
 
 const char* AddressHashAttr       = "_hash";
+const char* AddressOutValueAttr   = "_outValue";
 const char* AddressNumOutputsAttr = "_numOutputs";
 const char* AddressOutputsAttr    = "_outputs";
 

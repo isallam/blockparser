@@ -20,6 +20,7 @@ UPDATE SCHEMA
       _blockId:        Integer {Encoding: Unsigned, Storage: b64},
       _hash:           String {Encoding: Utf8}, 
       _mintTime:       DateTime,
+      _isCoinBase:     Bool,
       _inValue:        Integer {Encoding: Unsigned, Storage: b64}, 
       _outValue:       Integer {Encoding: Unsigned, Storage: b64}, 
       _numInputs:      Integer {Encoding: Unsigned, Storage: b64},
@@ -31,17 +32,17 @@ UPDATE SCHEMA
 
   CREATE CLASS Input
   {
-      _id:             Integer {Encoding: Unsigned, Storage: b64}, 
+      _index:          Integer {Encoding: Unsigned, Storage: b64}, 
       _upTxHash:       String {Encoding: Utf8},
       _transaction:    Reference {Referenced: Transaction},
       _parent:         Reference {Referenced: Transaction},
-      _isCoinBase:     Bool,
+      _parentIndex:    Integer {Encoding: Unsigned, Storage: b64}, 
       _tag:            Reference {Referenced: Tag}
   }
 
   CREATE CLASS Output
   {
-      _id:             Integer {Encoding: Unsigned, Storage: b64}, 
+      _index:          Integer {Encoding: Unsigned, Storage: b64}, 
       _transaction:    Reference {Referenced: Transaction},
       _address:        Reference {Referenced: Address},
       _addressHash:    String {Encoding: Utf8},
@@ -52,6 +53,7 @@ UPDATE SCHEMA
   CREATE CLASS Address
   {
       _hash:           String {Encoding: Utf8},
+      _outValue:       Integer {Encoding: Unsigned, Storage: b64}, 
       _numOutputs:     Integer {Encoding: Unsigned, Storage: b64}, 
       _outputs:        List {Element: Reference{Referenced: Output}, CollectionName: SegmentedArray},
       _tag:            Reference {Referenced: Tag}

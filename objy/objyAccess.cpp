@@ -143,30 +143,29 @@ objydata::Reference ObjyAccess::createTransaction(
  * @param isCoinBase
  * @return 
  */
-objydata::Reference ObjyAccess::createInput(
-        uint64_t id, uint8_t* upTxHash, 
-        ooId& upTrxRef, bool isCoinBase,
-        objydata::Reference& transaction)
+objydata::Reference ObjyAccess::createInput(uint64_t index, uint8_t* upTxHash, 
+        ooId& upTrxRef, uint64_t upTrxIndex, objydata::Reference& transaction)
 {
   ClassAccessor* classAccessor = this->getClassProxy(InputClassName);
   objydata::Object object = classAccessor->createInstance();
 
   objydata::Variable value;
   
-  value.set(id);
-  classAccessor->setAttributeValue(object, InputIdAttr, value);
+  value.set(index);
+  classAccessor->setAttributeValue(object, InputIndexAttr, value);
  
-  value.set(isCoinBase);
-  classAccessor->setAttributeValue(object, InputIsCoinBaseAttr, value);
-  
 //  _stringVariable.set(reinterpret_cast<char*>(upTxHash));
 ////  value.set(_stringVariable);
 //  classAccessor->setAttributeValue(object, InputUpTxHashAttr, _stringVariable);
   
-  if (!isCoinBase/* && !upTrxRef*/)
+//  if (!isCoinBase/* && !upTrxRef*/)
   {
     classAccessor->setReference(object, InputUpTxAttr, 
                       objydata::referenceFor(upTrxRef));
+
+    value.set(upTrxIndex);
+    classAccessor->setAttributeValue(object, InputUpTxIndexAttr, value);
+ 
   }
 
   //printf("adding input to transaction: %s\n", objy::data::oidFor(transaction).sprint());
@@ -184,7 +183,7 @@ objydata::Reference ObjyAccess::createInput(
  * @return 
  */
 objydata::Reference ObjyAccess::createOutput(
-        uint64_t id, uint8_t* address, 
+        uint64_t index, uint8_t* address, 
         objydata::Reference& addressRef, uint64_t trxValue,
         objydata::Reference& transaction)
 {
@@ -193,8 +192,8 @@ objydata::Reference ObjyAccess::createOutput(
   
   objydata::Variable value;
   
-  value.set(id);
-  classAccessor->setAttributeValue(object, OutputIdAttr, value);
+  value.set(index);
+  classAccessor->setAttributeValue(object, OutputIndexAttr, value);
 
   value.set(trxValue);
   classAccessor->setAttributeValue(object, OutputValueAttr, value);
@@ -217,6 +216,9 @@ objydata::Reference ObjyAccess::createOutput(
     
     addressClassAccessor->incUInt64AttributeValue(addressRef.referencedObject(),
                             AddressNumOutputsAttr);
+    
+    addressClassAccessor->addToUInt64AttributeValue(addressRef.referencedObject(),
+                            AddressOutValueAttr, trxValue);
   }
   
   classAccessor->setReference(object, OutputTransactionAttr, transaction);
@@ -271,11 +273,15 @@ bool ObjyAccess::addOutputToTransaction(objydata::Reference& output, objydata::R
 }
 
 bool ObjyAccess::updateTransactionValues(objydata::Reference& transaction, 
-        uint64_t trxInValue, uint64_t trxOutValue, uint64_t numInputs,
-        uint64_t numOutputs)
+        bool isCoinBase, uint64_t trxInValue, uint64_t trxOutValue, 
+        uint64_t numInputs, uint64_t numOutputs)
 {
   ClassAccessor* classAccessor = this->getClassProxy(TransactionClassName);
   objydata::Variable value;
+  
+  value.set(isCoinBase);
+  classAccessor->setAttributeValue(transaction.referencedObject(), 
+          TransactionIsCoinBaseAttr, value);
   
   value.set(trxInValue);
   classAccessor->setAttributeValue(transaction.referencedObject(), 
@@ -289,5 +295,4 @@ bool ObjyAccess::updateTransactionValues(objydata::Reference& transaction,
   value.set(numOutputs);
   classAccessor->setAttributeValue(transaction.referencedObject(), 
           TransactionNumOutputsAttr, value);
-  
-}
+  }
