@@ -52,6 +52,7 @@ UPDATE SCHEMA
   CREATE CLASS Address
   {
       _hash:           String {Encoding: Utf8},
+      _numOutputs:     Integer {Encoding: Unsigned, Storage: b64}, 
       _outputs:        List {Element: Reference{Referenced: Output}, CollectionName: SegmentedArray},
       _tag:            Reference {Referenced: Tag}
   }

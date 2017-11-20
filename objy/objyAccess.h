@@ -112,6 +112,13 @@ class ClassAccessor {
       setReference(instance, attribute, value);
     }
 
+    void incUInt64AttributeValue(objy::data::Object instance, const string& attributeName) const
+    {
+      const objy::data::Attribute& attribute = this->getAttribute(attributeName);
+      if (!attribute.isNull())
+        incUInt64AttributeValue(instance, attribute);
+    }
+    
   private:
     void setAttributeValue(objy::data::Object instance,
             const objy::data::Attribute& attribute, const objy::data::Variable& value) const
@@ -158,6 +165,19 @@ class ClassAccessor {
       }
     }
 
+    /* 
+     * Note that the variable we are incrementing is of type 'uint64_t' 
+     * Hence we named the function specifically to show that.
+     * A better generic impl should check the type and get the value accordingly.
+     */
+    void incUInt64AttributeValue(objy::data::Object instance,
+            const objy::data::Attribute& attribute) const
+    {
+      objy::data::Variable varValue;
+      instance.attributeValue(attribute, varValue);
+      varValue.set(varValue.get<uint64_t>() + 1);
+    }
+    
   private:
 
     string            _className;

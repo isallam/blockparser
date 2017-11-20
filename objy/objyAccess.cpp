@@ -214,6 +214,9 @@ objydata::Reference ObjyAccess::createOutput(
     ClassAccessor* addressClassAccessor = this->getClassProxy(AddressClassName);
     addressClassAccessor->setReference(addressRef.referencedObject(), 
                             AddressOutputsAttr, objectRef);
+    
+    addressClassAccessor->incUInt64AttributeValue(addressRef.referencedObject(),
+                            AddressNumOutputsAttr);
   }
   
   classAccessor->setReference(object, OutputTransactionAttr, transaction);
