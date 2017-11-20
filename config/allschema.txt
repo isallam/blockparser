@@ -2,61 +2,63 @@ UPDATE SCHEMA
 {
 	CREATE CLASS Block 
 	{
-		m_Id:             Integer {Encoding: Unsigned, Storage: b64}, 
-		m_Version:        Integer {Encoding: Unsigned}, 
-    m_Time:           DateTime,
-		m_Hash:           String {Encoding: Utf8},
-		m_PrevBlockHash:  String {Encoding: Utf8},
-		m_MerkleRootHash: String {Encoding: Utf8}, 
-		m_PrevBlock:      Reference {Referenced: Block},
-		m_NextBlock:      Reference {Referenced: Block},
-		m_Transactions:   List {Element: Reference{Referenced: Transaction}, CollectionName: SegmentedArray},
-		m_Tag:            Reference {Referenced: Tag}
+      _id:             Integer {Encoding: Unsigned, Storage: b64}, 
+      _version:        Integer {Encoding: Unsigned}, 
+      _time:           DateTime,
+      _hash:           String {Encoding: Utf8},
+      _prevBlockHash:  String {Encoding: Utf8},
+      _merkleRootHash: String {Encoding: Utf8}, 
+      _prevBlock:      Reference {Referenced: Block},
+      _nextBlock:      Reference {Referenced: Block},
+      _transactions:   List {Element: Reference{Referenced: Transaction}, CollectionName: SegmentedArray},
+      _tag:            Reference {Referenced: Tag}
   }
 
-	CREATE CLASS Transaction 
-	{
-		m_Id:             Integer {Encoding: Unsigned, Storage: b64}, 
-		m_Hash:           String {Encoding: Utf8}, 
-    m_MintTime:       DateTime,
-		m_InValue:        Integer {Encoding: Unsigned, Storage: b64}, 
-		m_OutValue:       Integer {Encoding: Unsigned, Storage: b64}, 
-		m_BlockId:        Integer {Encoding: Unsigned, Storage: b64},
-		m_Inputs:         List {Element: Reference{Referenced: Input}, CollectionName: SegmentedArray},
-		m_Outputs:        List {Element: Reference{Referenced: Output}, CollectionName: SegmentedArray},
-		m_Tag:            Reference {Referenced: Tag}
+  CREATE CLASS Transaction 
+  {
+      _id:             Integer {Encoding: Unsigned, Storage: b64}, 
+      _blockId:        Integer {Encoding: Unsigned, Storage: b64},
+      _hash:           String {Encoding: Utf8}, 
+      _mintTime:       DateTime,
+      _inValue:        Integer {Encoding: Unsigned, Storage: b64}, 
+      _outValue:       Integer {Encoding: Unsigned, Storage: b64}, 
+      _numInputs:      Integer {Encoding: Unsigned, Storage: b64},
+      _numOutputs:     Integer {Encoding: Unsigned, Storage: b64},
+      _inputs:         List {Element: Reference{Referenced: Input}, CollectionName: SegmentedArray},
+      _outputs:        List {Element: Reference{Referenced: Output}, CollectionName: SegmentedArray},
+      _tag:            Reference {Referenced: Tag}
   }
 
   CREATE CLASS Input
   {
-		m_Id:             Integer {Encoding: Unsigned, Storage: b64}, 
-		m_UpTxHash:       String {Encoding: Utf8},
-		m_Transaction:    Reference {Referenced: Transaction},
-		m_UpTx:           Reference {Referenced: Transaction},
-		m_IsCoinBase:     Bool,
-		m_Tag:            Reference {Referenced: Tag}
+      _id:             Integer {Encoding: Unsigned, Storage: b64}, 
+      _upTxHash:       String {Encoding: Utf8},
+      _transaction:    Reference {Referenced: Transaction},
+      _parent:         Reference {Referenced: Transaction},
+      _isCoinBase:     Bool,
+      _tag:            Reference {Referenced: Tag}
   }
 
   CREATE CLASS Output
   {
-		m_Id:             Integer {Encoding: Unsigned, Storage: b64}, 
-		m_Transaction:    Reference {Referenced: Transaction},
-		m_Address:        Reference {Referenced: Address},
-		m_AddressHash:    String {Encoding: Utf8},
-		m_Value:          Integer {Encoding: Unsigned, Storage: b64}, 
-		m_Tag:            Reference {Referenced: Tag}
+      _id:             Integer {Encoding: Unsigned, Storage: b64}, 
+      _transaction:    Reference {Referenced: Transaction},
+      _address:        Reference {Referenced: Address},
+      _addressHash:    String {Encoding: Utf8},
+      _value:          Integer {Encoding: Unsigned, Storage: b64}, 
+      _tag:            Reference {Referenced: Tag}
   }
 
   CREATE CLASS Address
   {
-		m_Hash:           String {Encoding: Utf8},
-		m_Outputs:        List {Element: Reference{Referenced: Output}, CollectionName: SegmentedArray},
-		m_Tag:            Reference {Referenced: Tag}
+      _hash:           String {Encoding: Utf8},
+      _outputs:        List {Element: Reference{Referenced: Output}, CollectionName: SegmentedArray},
+      _tag:            Reference {Referenced: Tag}
   }
 
   CREATE CLASS Tag
   {
-    m_Label:          String {Encoding: Utf8},
-		m_Ref:            Reference {Referenced: ooObj}
+      _label:          String {Encoding: Utf8},
+      _ref:            Reference {Referenced: ooObj}
   }
 }

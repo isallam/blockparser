@@ -203,7 +203,9 @@ public:
   bool addInputToTransaction(objydata::Reference& input, objydata::Reference& transaction);
   bool addOutputToTransaction(objydata::Reference& output, objydata::Reference& transaction);
   
-  bool updateTransactionValues(objydata::Reference& transaction, uint64_t trxInValue, uint64_t trxOutValue);
+  bool updateTransactionValues(objydata::Reference& transaction, 
+          uint64_t trxInValue, uint64_t trxOutValue, 
+          uint64_t numInputs, uint64_t numOutputs);
 
 private:
 

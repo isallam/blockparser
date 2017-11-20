@@ -268,7 +268,8 @@ bool ObjyAccess::addOutputToTransaction(objydata::Reference& output, objydata::R
 }
 
 bool ObjyAccess::updateTransactionValues(objydata::Reference& transaction, 
-        uint64_t trxInValue, uint64_t trxOutValue)
+        uint64_t trxInValue, uint64_t trxOutValue, uint64_t numInputs,
+        uint64_t numOutputs)
 {
   ClassAccessor* classAccessor = this->getClassProxy(TransactionClassName);
   objydata::Variable value;
@@ -279,5 +280,11 @@ bool ObjyAccess::updateTransactionValues(objydata::Reference& transaction,
   value.set(trxOutValue);
   classAccessor->setAttributeValue(transaction.referencedObject(), 
           TransactionOutValueAttr, value);
+  value.set(numInputs);
+  classAccessor->setAttributeValue(transaction.referencedObject(), 
+          TransactionNumInputsAttr, value); 
+  value.set(numOutputs);
+  classAccessor->setAttributeValue(transaction.referencedObject(), 
+          TransactionNumOutputsAttr, value);
   
 }

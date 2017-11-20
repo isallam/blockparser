@@ -111,7 +111,6 @@ struct ObjyDump : public Callback {
     txID = 0;
     blkID = 0;
     inputID = 0;
-    outputID = 0;
     numCommits = 0;
 
     // TBD... boot file is hard coded for now, will be params later
@@ -238,6 +237,8 @@ struct ObjyDump : public Callback {
 
     currentTrxInValue = 0;
     currentTrxOutValue = 0;
+    outputID = 0;
+    inputID = 0;
     
     uint8_t *key = allocHash256();
     memcpy(key, hash, kSHA256ByteSize);
@@ -257,14 +258,14 @@ struct ObjyDump : public Callback {
     LOAD(uint32_t, lockTime, p);
     // update TrxInValue and TrxOutValue
     objyAccess.updateTransactionValues(currentTransaction, 
-                    currentTrxInValue, currentTrxOutValue);
+                    currentTrxInValue, currentTrxOutValue,
+                    inputID, outputID);
     
   }
 
   virtual void startInputs(
           const uint8_t *p
           ) {
-    inputID = 0;
     isCoinBase = false;
   }
 
