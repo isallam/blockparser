@@ -333,8 +333,8 @@ struct ObjyDump : public Callback {
            upTrxRef = val->second;
          }
 
-        objydata::Reference input = objyAccess.createInput(inputIndex, buf, upTrxRef,
-                outputIndex, currentTransaction);
+        objydata::Reference input = objyAccess.createInput(inputIndex, value, 
+                upTrxRef, outputIndex, currentTransaction);
 
         objyAccess.addInputToTransaction(input, currentTransaction);
         ++inputID;
@@ -397,8 +397,8 @@ struct ObjyDump : public Callback {
     // offset INT
 
     currentTrxOutValue += value;
-    objydata::Reference output = objyAccess.createOutput(outputIndex, address,
-            addressRef, value, currentTransaction);
+    objydata::Reference output = objyAccess.createOutput(outputIndex, value, 
+            addressRef, currentTransaction);
     objyAccess.addOutputToTransaction(output, currentTransaction);
 
     //uint32_t oi = outputIndex;

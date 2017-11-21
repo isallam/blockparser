@@ -54,6 +54,7 @@ const char* TransactionNumOutputsAttr = "_numOutputs";
 const char* TransactionOutputsAttr    = "_outputs";
 
 const char* InputIndexAttr       = "_index";
+const char* InputValueAttr       = "_value";
 const char* InputUpTxHashAttr    = "_upTxHash"; 
 const char* InputUpTxAttr        = "_parent";
 const char* InputUpTxIndexAttr   = "_parentIndex";

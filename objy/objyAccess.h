@@ -232,14 +232,14 @@ public:
   objydata::Reference createBlock(
         uint64_t id, int version, uint8_t* prevBlockHash, uint8_t* blockMerkleRoot, 
         long blkTime, uint8_t* hash, objydata::Reference& prevBlock);
-  objydata::Reference createTransaction(uint64_t id, uint8_t* hash, long blkTime,
-                        uint64_t blockId);
+  objydata::Reference createTransaction(
+          uint64_t id, uint8_t* hash, long blkTime, uint64_t blockId);
   objydata::Reference createInput(
-          uint64_t index, uint8_t* upTxHash, ooId& upTrxRef, uint64_t upTrxIndex, 
+          uint64_t index, uint64_t inValue, ooId& upTrxRef, 
+          uint64_t upTrxIndex, objydata::Reference& transaction);
+  objydata::Reference createOutput(
+          uint64_t index, uint64_t outValue, objydata::Reference& addressRef, 
           objydata::Reference& transaction);
-  objydata::Reference createOutput(uint64_t index, 
-          uint8_t* address, objydata::Reference& addressRef, 
-          uint64_t trxValue, objydata::Reference& transaction);
   objydata::Reference createAddress(uint8_t* hash);
 
   bool addTransactionToBlock(objydata::Reference& transaction, objydata::Reference& block);

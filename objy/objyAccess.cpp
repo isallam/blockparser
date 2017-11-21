@@ -143,8 +143,9 @@ objydata::Reference ObjyAccess::createTransaction(
  * @param isCoinBase
  * @return 
  */
-objydata::Reference ObjyAccess::createInput(uint64_t index, uint8_t* upTxHash, 
-        ooId& upTrxRef, uint64_t upTrxIndex, objydata::Reference& transaction)
+objydata::Reference ObjyAccess::createInput(
+        uint64_t index, uint64_t inValue, ooId& upTrxRef, 
+        uint64_t upTrxIndex, objydata::Reference& transaction)
 {
   ClassAccessor* classAccessor = this->getClassProxy(InputClassName);
   objydata::Object object = classAccessor->createInstance();
@@ -153,6 +154,9 @@ objydata::Reference ObjyAccess::createInput(uint64_t index, uint8_t* upTxHash,
   
   value.set(index);
   classAccessor->setAttributeValue(object, InputIndexAttr, value);
+ 
+  value.set(inValue);
+  classAccessor->setAttributeValue(object, InputValueAttr, value);
  
 //  _stringVariable.set(reinterpret_cast<char*>(upTxHash));
 ////  value.set(_stringVariable);
@@ -183,8 +187,7 @@ objydata::Reference ObjyAccess::createInput(uint64_t index, uint8_t* upTxHash,
  * @return 
  */
 objydata::Reference ObjyAccess::createOutput(
-        uint64_t index, uint8_t* address, 
-        objydata::Reference& addressRef, uint64_t trxValue,
+        uint64_t index, uint64_t outValue, objydata::Reference& addressRef, 
         objydata::Reference& transaction)
 {
   ClassAccessor* classAccessor = this->getClassProxy(OutputClassName);
@@ -195,7 +198,7 @@ objydata::Reference ObjyAccess::createOutput(
   value.set(index);
   classAccessor->setAttributeValue(object, OutputIndexAttr, value);
 
-  value.set(trxValue);
+  value.set(outValue);
   classAccessor->setAttributeValue(object, OutputValueAttr, value);
   
 //  _stringVariable.set(reinterpret_cast<char*>(address));
@@ -218,7 +221,7 @@ objydata::Reference ObjyAccess::createOutput(
                             AddressNumOutputsAttr);
     
     addressClassAccessor->addToUInt64AttributeValue(addressRef.referencedObject(),
-                            AddressOutValueAttr, trxValue);
+                            AddressOutValueAttr, outValue);
   }
   
   classAccessor->setReference(object, OutputTransactionAttr, transaction);
